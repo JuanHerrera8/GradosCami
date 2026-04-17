@@ -26,7 +26,7 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+    transition: { delay: i * 0.1, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
   }),
 }
 
@@ -277,163 +277,173 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
       style={{ background: 'var(--color-background)' }}
     >
       {/* Outer glow border */}
-      <motion.div
-        animate={{ y: [0, -4, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        className="relative w-full max-w-sm"
-        style={{ filter: 'drop-shadow(0 16px 48px rgba(194,84,122,0.22))' }}
-      >
-        <div
-          className="rounded-3xl p-px"
-          style={{ background: 'linear-gradient(145deg, #F2B8CF 0%, #C2547A66 50%, #F8D7E3 100%)' }}
+      <div style={{ filter: 'drop-shadow(0 16px 48px rgba(194,84,122,0.22))' }}>
+        <motion.div
+          animate={{ y: [0, -14, 0], rotate: [0, 0.6, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          className="relative w-full max-w-sm"
+          style={{ willChange: 'transform' }}
         >
-          {/* Card */}
           <div
-            className="relative rounded-3xl overflow-hidden"
-            style={{
-              background: 'rgba(255,255,255,0.78)',
-              backdropFilter: 'blur(32px)',
-              WebkitBackdropFilter: 'blur(32px)',
-            }}
+            className="rounded-3xl p-px"
+            style={{ background: 'linear-gradient(145deg, #F2B8CF 0%, #C2547A66 50%, #F8D7E3 100%)' }}
           >
-            {/* Statistical decoration layer — inside the card */}
-            <CardDecoration />
+            {/* Card */}
+            <div
+              className="relative rounded-3xl overflow-hidden"
+              style={{
+                background: 'rgba(255,255,255,0.78)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)',
+              }}
+            >
+              {/* Statistical decoration layer — inside the card */}
+              <CardDecoration />
 
-            {/* Content — above decoration */}
-            <div className="relative z-10 flex flex-col">
+              {/* Content — above decoration */}
+              <div className="relative z-10 flex flex-col">
 
-              {/* ── Banner ── */}
-              <div
-                className="px-6 pt-5 pb-4 flex flex-col items-center gap-0.5"
-                style={{ background: 'linear-gradient(160deg, #E8A0BB 0%, #C2547A 100%)' }}
-              >
-                <motion.p
-                  custom={0} initial="hidden" animate="visible" variants={fadeUp}
-                  className="text-[9px] tracking-[0.35em] uppercase font-sans text-white/80"
+                {/* ── Banner ── */}
+                <div
+                  className="px-6 pt-5 pb-4 flex flex-col items-center gap-0.5"
+                  style={{ background: 'linear-gradient(160deg, #E8A0BB 0%, #C2547A 100%)' }}
                 >
-                  Invitación para
-                </motion.p>
-                <motion.h2
-                  custom={0.5} initial="hidden" animate="visible" variants={fadeUp}
-                  className="font-serif text-xl text-white text-center leading-tight text-balance"
-                >
-                  {guestName ?? 'Un invitado especial'}
-                </motion.h2>
-                <motion.div
-                  custom={1} initial="hidden" animate="visible" variants={fadeUp}
-                  className="mt-2 flex items-center gap-2"
-                >
-                  <div className="h-px w-8 bg-white/40" />
-                  <span className="font-serif text-white/70 text-base select-none">σ</span>
-                  <div className="h-px w-8 bg-white/40" />
-                </motion.div>
-              </div>
-
-              {/* ── Body ── */}
-              <div className="px-6 pt-4 pb-5 flex flex-col items-center gap-3.5">
-
-                {/* Celebrant */}
-                <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp} className="text-center">
-                  <p className="text-[9px] font-sans tracking-[0.3em] uppercase" style={{ color: '#B0708A' }}>
-                    Celebrando el grado de
-                  </p>
-                  <h1
-                    className="font-serif leading-tight mt-0.5"
-                    style={{ color: '#7D2B4A', fontSize: '2.6rem' }}
+                  <motion.p
+                    custom={0} initial="hidden" animate="visible" variants={fadeUp}
+                    className="text-[9px] tracking-[0.35em] uppercase font-sans text-white/80"
                   >
-                    Cami
-                  </h1>
-                  <p className="font-sans text-[11px]" style={{ color: '#A03860' }}>
-                    Estadística
-                  </p>
-                </motion.div>
-
-                {/* Divider */}
-                <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="flex items-center gap-3 w-full">
-                  <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
-                  <span className="font-serif text-sm select-none" style={{ color: '#E8A0BB' }}>✦</span>
-                  <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
-                </motion.div>
-
-                {/* Invitation text */}
-                <motion.p
-                  custom={4} initial="hidden" animate="visible" variants={fadeUp}
-                  className="text-center font-serif leading-relaxed text-balance text-[0.92rem]"
-                  style={{ color: '#7D2B4A' }}
-                >
-                  {guestName
-                    ? `${guestName}, te esperamos para celebrar este momento tan especial.`
-                    : 'Te esperamos para celebrar este momento tan especial.'}
-                </motion.p>
-
-                {/* Event details — two columns */}
-                <motion.div custom={5} initial="hidden" animate="visible" variants={fadeUp} className="grid grid-cols-2 gap-2 w-full">
-                  <DetailChip icon={<CalendarIcon />} label="Fecha" value="Vie 24 abr, 2026" />
-                  <DetailChip icon={<ClockIcon />} label="Hora" value="7:00 p.m." />
-                </motion.div>
-
-                {/* Countdown */}
-                <motion.div custom={6} initial="hidden" animate="visible" variants={fadeUp} className="w-full">
-                  <p className="text-[9px] font-sans tracking-[0.3em] uppercase text-center mb-2" style={{ color: '#B0708A' }}>
-                    Cuenta regresiva
-                  </p>
-                  <CountdownTimer compact />
-                </motion.div>
-
-                {/* Divider */}
-                <motion.div custom={7} initial="hidden" animate="visible" variants={fadeUp} className="flex items-center gap-3 w-full">
-                  <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
-                  <span className="font-serif text-sm select-none" style={{ color: '#E8A0BB' }}>✦</span>
-                  <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
-                </motion.div>
-
-                {/* Buttons */}
-                <motion.div custom={8} initial="hidden" animate="visible" variants={fadeUp} className="w-full flex flex-col gap-2">
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-sans font-semibold text-white text-sm tracking-wide transition-transform active:scale-95"
-                    style={{
-                      background: 'linear-gradient(135deg, #C2547A, #A03860)',
-                      boxShadow: '0 4px 20px rgba(194,84,122,0.32)',
-                    }}
-                    aria-label="Confirmar asistencia por WhatsApp"
+                    Invitación para
+                  </motion.p>
+                  <motion.h2
+                    custom={0.5} initial="hidden" animate="visible" variants={fadeUp}
+                    className="font-serif text-xl text-white text-center leading-tight text-balance"
                   >
-                    <WhatsAppIcon />
-                    Confirmar asistencia
-                  </a>
-                  <a
-                    href={MAPS_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-sans font-semibold text-sm tracking-wide transition-transform active:scale-95"
-                    style={{
-                      background: 'rgba(255,255,255,0.65)',
-                      border: '1.5px solid #F2B8CF',
-                      color: '#A03860',
-                    }}
-                    aria-label="Ver ubicacion del evento en Google Maps"
+                    {guestName ?? 'Un invitado especial'}
+                  </motion.h2>
+                  <motion.div
+                    custom={1} initial="hidden" animate="visible" variants={fadeUp}
+                    className="mt-2 flex items-center gap-2"
                   >
-                    <MapPinIcon />
-                    Ver ubicacion
-                  </a>
-                </motion.div>
+                    <div className="h-px w-8 bg-white/40" />
+                    <span className="font-serif text-white/70 text-base select-none">σ</span>
+                    <div className="h-px w-8 bg-white/40" />
+                  </motion.div>
+                </div>
 
-                {/* Footer note */}
-                <motion.p
-                  custom={9} initial="hidden" animate="visible" variants={fadeUp}
-                  className="text-[9px] font-sans text-center"
-                  style={{ color: '#C8879E' }}
-                >
-                  Con amor, Cami &mdash; Estadistica 2025
-                </motion.p>
+                {/* ── Body ── */}
+                <div className="px-6 pt-4 pb-5 flex flex-col items-center gap-3.5">
 
+                  {/* Celebrant */}
+                  <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp} className="text-center">
+                    <p className="text-[9px] font-sans tracking-[0.3em] uppercase" style={{ color: '#B0708A' }}>
+                      Celebrando el grado de
+                    </p>
+                    <h1
+                      className="font-serif leading-tight mt-0.5"
+                      style={{ color: '#7D2B4A', fontSize: '2.6rem' }}
+                    >
+                      Cami
+                    </h1>
+                    <p className="font-sans text-[11px]" style={{ color: '#A03860' }}>
+                      Estadística
+                    </p>
+                  </motion.div>
+
+                  {/* Divider */}
+                  <motion.div custom={3} initial="hidden" animate="visible" variants={fadeUp} className="flex items-center gap-3 w-full">
+                    <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
+                    <span className="font-serif text-sm select-none" style={{ color: '#E8A0BB' }}>✦</span>
+                    <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
+                  </motion.div>
+
+                  {/* Invitation text */}
+                  <motion.p
+                    custom={4} initial="hidden" animate="visible" variants={fadeUp}
+                    className="text-center font-serif leading-relaxed text-balance text-[0.92rem]"
+                    style={{ color: '#7D2B4A' }}
+                  >
+                    {guestName
+                      ? `${guestName}, te esperamos para celebrar este momento tan especial.`
+                      : 'Te esperamos para celebrar este momento tan especial.'}
+                  </motion.p>
+
+                  {/* Event details — two columns */}
+                  <motion.div custom={5} initial="hidden" animate="visible" variants={fadeUp} className="grid grid-cols-2 gap-2 w-full">
+                    <DetailChip icon={<CalendarIcon />} label="Fecha" value="Vie 24 abr, 2026" />
+                    <DetailChip icon={<ClockIcon />} label="Hora" value="7:00 p.m." />
+                  </motion.div>
+
+                  {/* Countdown */}
+                  <motion.div custom={6} initial="hidden" animate="visible" variants={fadeUp} className="w-full">
+                    <p className="text-[9px] font-sans tracking-[0.3em] uppercase text-center mb-2" style={{ color: '#B0708A' }}>
+                      Cuenta regresiva
+                    </p>
+                    <CountdownTimer compact />
+                  </motion.div>
+
+                  {/* Divider */}
+                  <motion.div custom={7} initial="hidden" animate="visible" variants={fadeUp} className="flex items-center gap-3 w-full">
+                    <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
+                    <span className="font-serif text-sm select-none" style={{ color: '#E8A0BB' }}>✦</span>
+                    <div className="flex-1 h-px" style={{ background: '#F2B8CF' }} />
+                  </motion.div>
+
+                  {/* Buttons */}
+                  <motion.div custom={8} initial="hidden" animate="visible" variants={fadeUp} className="w-full flex flex-col gap-2">
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-sans font-semibold text-white text-sm tracking-wide transition-transform active:scale-95"
+                      style={{
+                        background: 'linear-gradient(135deg, #C2547A, #A03860)',
+                        boxShadow: '0 4px 20px rgba(194,84,122,0.32)',
+                      }}
+                      aria-label="Confirmar asistencia por WhatsApp"
+                    >
+                      <WhatsAppIcon />
+                      Confirmar asistencia
+                    </a>
+                    <a
+                      href={MAPS_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-sans font-semibold text-sm tracking-wide transition-transform active:scale-95"
+                      style={{
+                        background: 'rgba(255,255,255,0.65)',
+                        border: '1.5px solid #F2B8CF',
+                        color: '#A03860',
+                      }}
+                      aria-label="Ver ubicacion del evento en Google Maps"
+                    >
+                      <MapPinIcon />
+                      Ver ubicacion
+                    </a>
+                  </motion.div>
+
+                  {/* Footer note */}
+                  <motion.p
+                    custom={9} initial="hidden" animate="visible" variants={fadeUp}
+                    className="text-[9px] font-sans text-center"
+                    style={{ color: '#C8879E' }}
+                  >
+                    Con amor, Cami &mdash; Estadistica 2026
+                  </motion.p>
+
+                  <motion.p
+                    custom={10} initial="hidden" animate="visible" variants={fadeUp}
+                    className="text-[8px] font-sans text-center uppercase tracking-[0.24em]"
+                    style={{ color: '#D3A0B2' }}
+                  >
+                    Desarrollado por Juan Herrera
+                  </motion.p>
+
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   )
 }
