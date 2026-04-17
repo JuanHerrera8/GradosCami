@@ -12,6 +12,7 @@ export function AdminPanel() {
   const [unlocked, setUnlocked] = useState(false)
   const [pinError, setPinError] = useState(false)
   const [guestInput, setGuestInput] = useState('')
+  const [plural, setPlural] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const baseUrl =
@@ -21,7 +22,7 @@ export function AdminPanel() {
 
   // Encode name with Base64 so the URL param is not human-readable
   const generatedLink = guestInput.trim()
-    ? `${baseUrl}?g=${encodeName(guestInput.trim())}`
+    ? `${baseUrl}?g=${encodeName(guestInput.trim())}${plural ? '&p=1' : ''}`
     : ''
 
   function handlePinSubmit(e: React.FormEvent) {
@@ -144,6 +145,31 @@ export function AdminPanel() {
                     style={{ borderColor: '#F2B8CF', background: 'rgba(248,215,227,0.4)', color: '#7D2B4A' }}
                   />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setPlural(p => !p)}
+                  className="flex items-center gap-3 w-full rounded-xl px-4 py-3 text-left transition-colors"
+                  style={{
+                    background: plural ? 'rgba(194,84,122,0.1)' : 'rgba(248,215,227,0.4)',
+                    border: `1px solid ${plural ? '#C2547A' : '#F2B8CF'}`,
+                  }}
+                >
+                  <div
+                    className="w-9 h-5 rounded-full flex-shrink-0 relative transition-colors"
+                    style={{ background: plural ? '#C2547A' : '#F2B8CF' }}
+                  >
+                    <div
+                      className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
+                      style={{ left: plural ? '18px' : '2px', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-sans font-semibold" style={{ color: '#7D2B4A' }}>
+                      Varios invitados
+                    </p>
+                  </div>
+                </button>
 
                 {generatedLink && (
                   <motion.div

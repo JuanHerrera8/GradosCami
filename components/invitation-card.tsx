@@ -249,7 +249,7 @@ function CardDecoration() {
         <span
           key={i}
           className="absolute font-serif select-none"
-          style={{ color: '#C2547A', opacity: 0.18, ...style }}
+          style={{ color: '#C2547A', opacity: 0.24, ...style }}
         >
           {sym}
         </span>
@@ -261,9 +261,10 @@ function CardDecoration() {
 // ── Main component ─────────────────────────────────────────────────────────
 interface InvitationCardProps {
   encoded: string | null
+  plural?: boolean
 }
 
-export function InvitationCard({ encoded }: InvitationCardProps) {
+export function InvitationCard({ encoded, plural = false }: InvitationCardProps) {
   const guestName = encoded ? decodeName(encoded) : null
 
   const whatsappMessage = encodeURIComponent(
@@ -273,11 +274,24 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
 
   return (
     <div
-      className="w-full min-h-dvh flex items-center justify-center px-4 py-6"
+      className="w-full min-h-dvh flex items-center justify-center px-4 py-6 relative overflow-hidden"
       style={{ background: 'var(--color-background)' }}
     >
+      {/* Background orbs */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div style={{
+          position: 'absolute', top: '-15%', left: '-10%', width: '65vw', height: '65vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(242,184,207,0.5) 0%, transparent 65%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-10%', right: '-10%', width: '55vw', height: '55vw',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(194,84,122,0.25) 0%, transparent 65%)',
+        }} />
+      </div>
       {/* Outer glow border */}
-      <div style={{ filter: 'drop-shadow(0 16px 48px rgba(194,84,122,0.22))' }}>
+      <div style={{ filter: 'drop-shadow(0 24px 64px rgba(194,84,122,0.4))' }}>
         <motion.div
           animate={{ y: [0, -14, 0], rotate: [0, 0.6, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
@@ -286,7 +300,7 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
         >
           <div
             className="rounded-3xl p-px"
-            style={{ background: 'linear-gradient(145deg, #F2B8CF 0%, #C2547A66 50%, #F8D7E3 100%)' }}
+            style={{ background: 'linear-gradient(145deg, #F2B8CF 0%, #C2547A 50%, #F8D7E3 100%)' }}
           >
             {/* Card */}
             <div
@@ -305,18 +319,33 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
 
                 {/* ── Banner ── */}
                 <div
-                  className="px-6 pt-5 pb-4 flex flex-col items-center gap-0.5"
-                  style={{ background: 'linear-gradient(160deg, #E8A0BB 0%, #C2547A 100%)' }}
+                  className="px-6 pt-5 pb-5 flex flex-col items-center gap-0.5 relative overflow-hidden"
+                  style={{ background: 'linear-gradient(160deg, #D4849F 0%, #A03860 100%)' }}
                 >
-                  <motion.p
+                  {/* Large σ watermark */}
+                  <span
+                    className="pointer-events-none select-none absolute -right-4 -bottom-8 font-serif"
+                    style={{ fontSize: '130px', color: 'white', opacity: 0.09, lineHeight: 1 }}
+                    aria-hidden="true"
+                  >σ</span>
+                  {/* Cap watermark top-left */}
+                  <span
+                    className="pointer-events-none select-none absolute -left-2 -top-3 font-serif"
+                    style={{ fontSize: '72px', color: 'white', opacity: 0.06, lineHeight: 1 }}
+                    aria-hidden="true"
+                  >🎓</span>
+                  <motion.div
                     custom={0} initial="hidden" animate="visible" variants={fadeUp}
-                    className="text-[9px] tracking-[0.35em] uppercase font-sans text-white/80"
+                    className="flex items-center gap-1.5 mb-0.5"
                   >
-                    Invitación para
-                  </motion.p>
+                    <GraduationCapIcon size={14} color="rgba(255,255,255,0.7)" />
+                    <p className="text-[9px] tracking-[0.35em] uppercase font-sans text-white/70">
+                      Invitación para
+                    </p>
+                  </motion.div>
                   <motion.h2
                     custom={0.5} initial="hidden" animate="visible" variants={fadeUp}
-                    className="font-serif text-xl text-white text-center leading-tight text-balance"
+                    className="font-serif text-2xl text-white text-center leading-tight text-balance"
                   >
                     {guestName ?? 'Un invitado especial'}
                   </motion.h2>
@@ -324,9 +353,9 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
                     custom={1} initial="hidden" animate="visible" variants={fadeUp}
                     className="mt-2 flex items-center gap-2"
                   >
-                    <div className="h-px w-8 bg-white/40" />
-                    <span className="font-serif text-white/70 text-base select-none">σ</span>
-                    <div className="h-px w-8 bg-white/40" />
+                    <div className="h-px w-10 bg-white/30" />
+                    <span className="font-serif text-white/60 text-sm select-none tracking-widest">✦ σ ✦</span>
+                    <div className="h-px w-10 bg-white/30" />
                   </motion.div>
                 </div>
 
@@ -334,8 +363,9 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
                 <div className="px-6 pt-4 pb-5 flex flex-col items-center gap-3.5">
 
                   {/* Celebrant */}
-                  <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp} className="text-center">
-                    <p className="text-[9px] font-sans tracking-[0.3em] uppercase" style={{ color: '#B0708A' }}>
+                  <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp} className="text-center flex flex-col items-center">
+                    <GraduationCapIcon size={28} color="#C2547A" />
+                    <p className="text-[9px] font-sans tracking-[0.3em] uppercase mt-1.5" style={{ color: '#B0708A' }}>
                       Celebrando el grado de
                     </p>
                     <h1
@@ -344,9 +374,13 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
                     >
                       Cami
                     </h1>
-                    <p className="font-sans text-[11px]" style={{ color: '#A03860' }}>
-                      Estadística
-                    </p>
+                    <div
+                      className="mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full"
+                      style={{ background: 'rgba(194,84,122,0.08)', border: '1px solid rgba(194,84,122,0.22)' }}
+                    >
+                      <span className="font-serif text-[13px]" style={{ color: '#A03860' }}>∑</span>
+                      <span className="font-sans text-[9px] tracking-[0.2em] uppercase" style={{ color: '#A03860' }}>Estadística · 2026</span>
+                    </div>
                   </motion.div>
 
                   {/* Divider */}
@@ -363,14 +397,14 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
                     style={{ color: '#7D2B4A' }}
                   >
                     {guestName
-                      ? `${guestName}, te esperamos para celebrar este momento tan especial.`
-                      : 'Te esperamos para celebrar este momento tan especial.'}
+                      ? `${guestName}, ${plural ? 'los' : 'te'} esperamos para celebrar este momento tan especial.`
+                      : `${plural ? 'Los' : 'Te'} esperamos para celebrar este momento tan especial.`}
                   </motion.p>
 
                   {/* Event details — two columns */}
                   <motion.div custom={5} initial="hidden" animate="visible" variants={fadeUp} className="grid grid-cols-2 gap-2 w-full">
                     <DetailChip icon={<CalendarIcon />} label="Fecha" value="Vie 24 abr, 2026" />
-                    <DetailChip icon={<ClockIcon />} label="Hora" value="7:00 p.m." />
+                    <DetailChip icon={<ClockIcon />} label="Hora" value="800 p.m." />
                   </motion.div>
 
                   {/* Countdown */}
@@ -496,6 +530,17 @@ function ClockIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+
+function GraduationCapIcon({ size = 20, color = '#C2547A' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 3L2 8.5l10 5.5 10-5.5L12 3z" fill={color} opacity="0.8" />
+      <path d="M6.5 11.5V16c0 0 1.9 2.5 5.5 2.5S17.5 16 17.5 16v-4.5" stroke={color} strokeWidth="1.6" strokeLinecap="round" fill="none" opacity="0.9" />
+      <line x1="20" y1="8.5" x2="20" y2="14" stroke={color} strokeWidth="1.6" strokeLinecap="round" opacity="0.8" />
+      <circle cx="20" cy="14.8" r="1.3" fill={color} opacity="0.8" />
     </svg>
   )
 }

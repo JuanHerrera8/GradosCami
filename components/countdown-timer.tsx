@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
-// April 24, 2026 at 7:00 PM Colombia (UTC-5)
-const EVENT_DATE = new Date('2026-04-24T19:00:00-05:00')
+// April 24, 2026 at 8:00 PM Colombia (UTC-5)
+const EVENT_DATE = new Date('2026-04-24T20:00:00-05:00')
 
 interface TimeLeft {
   days: number
