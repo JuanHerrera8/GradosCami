@@ -404,7 +404,7 @@ export function InvitationCard({ encoded, plural = false }: InvitationCardProps)
                   {/* Event details — two columns */}
                   <motion.div custom={5} initial="hidden" animate="visible" variants={fadeUp} className="grid grid-cols-2 gap-2 w-full">
                     <DetailChip icon={<CalendarIcon />} label="Fecha" value="Vie 24 abr, 2026" />
-                    <DetailChip icon={<ClockIcon />} label="Hora" value="800 p.m." />
+                    <DetailChip icon={<ClockIcon />} label="Hora" value="8:00 p.m." />
                   </motion.div>
 
                   {/* Countdown */}
