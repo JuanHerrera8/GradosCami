@@ -5,7 +5,7 @@ import { CountdownTimer } from './countdown-timer'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const WHATSAPP_NUMBER = '573205277631'
-const MAPS_URL = 'https://maps.google.com/?q=Carrera+43A+1-50+Medellín'
+const MAPS_URL = 'https://maps.app.goo.gl/rEFr4Y6TA2f6ZG218'
 
 // ── Encoding helpers ───────────────────────────────────────────────────────
 export function encodeName(name: string): string {
@@ -78,7 +78,7 @@ function CardDecoration() {
 
   // Residuals data
   const residuals: [number, number][] = [
-    [10,40],[18,32],[26,48],[34,35],[42,43],[50,37],[58,44],[66,33],[74,41],[82,36],
+    [10, 40], [18, 32], [26, 48], [34, 35], [42, 43], [50, 37], [58, 44], [66, 33], [74, 41], [82, 36],
   ]
   const residualMid = 38
 
@@ -129,10 +129,10 @@ function CardDecoration() {
           <line x1="12" y1="6" x2="12" y2="78" stroke="#C2547A" strokeWidth="1" />
           <line x1="12" y1="78" x2="112" y2="78" stroke="#C2547A" strokeWidth="1" />
           {/* tick marks */}
-          {[0,1,2,3,4].map(i => (
+          {[0, 1, 2, 3, 4].map(i => (
             <line key={i} x1={12 + i * 25} y1="78" x2={12 + i * 25} y2="82" stroke="#C2547A" strokeWidth="0.7" />
           ))}
-          {[0,1,2,3].map(i => (
+          {[0, 1, 2, 3].map(i => (
             <line key={i} x1="8" y1={78 - i * 18} x2="12" y2={78 - i * 18} stroke="#C2547A" strokeWidth="0.7" />
           ))}
           {/* CI band */}
@@ -141,8 +141,8 @@ function CardDecoration() {
           {/* regression line */}
           <line x1="14" y1="74" x2="110" y2="20" stroke="#A03860" strokeWidth="1.4" strokeDasharray="5 2" />
           {/* points */}
-          {([[16,70],[24,63],[32,58],[40,51],[48,47],[56,40],[64,34],[72,28],[80,24],[88,18],[96,14],
-             [20,67],[36,53],[52,44],[68,36],[84,22]] as [number,number][]).map(([x, y], i) => (
+          {([[16, 70], [24, 63], [32, 58], [40, 51], [48, 47], [56, 40], [64, 34], [72, 28], [80, 24], [88, 18], [96, 14],
+          [20, 67], [36, 53], [52, 44], [68, 36], [84, 22]] as [number, number][]).map(([x, y], i) => (
             <circle key={i} cx={x} cy={y} r="2" fill="#C2547A" />
           ))}
           {/* label */}
@@ -181,7 +181,7 @@ function CardDecoration() {
       {/* ── Histogram — bottom-left, visible ── */}
       <div className="absolute bottom-0 left-0 opacity-[0.17]">
         <svg viewBox="0 0 100 64" width="90" height="58">
-          {([0.08,0.18,0.42,0.72,1,0.72,0.42,0.18,0.08] as number[]).map((v, i) => {
+          {([0.08, 0.18, 0.42, 0.72, 1, 0.72, 0.42, 0.18, 0.08] as number[]).map((v, i) => {
             const bw2 = 100 / 9
             const bh2 = v * 52
             return (
@@ -344,7 +344,7 @@ export function InvitationCard({ encoded }: InvitationCardProps) {
                     Cami
                   </h1>
                   <p className="font-sans text-[11px]" style={{ color: '#A03860' }}>
-                    Estadistica &mdash; Clase 2025
+                    Estadística
                   </p>
                 </motion.div>
 

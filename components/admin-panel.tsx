@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { encodeName } from './invitation-card'
 
-const SECRET_PIN = '1234'
+const SECRET_PIN = '0208'
 
 export function AdminPanel() {
   const [pinOpen, setPinOpen] = useState(false)
