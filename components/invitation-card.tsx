@@ -448,10 +448,10 @@ export function InvitationCard({ encoded, plural = false }: InvitationCardProps)
                         border: '1.5px solid #F2B8CF',
                         color: '#A03860',
                       }}
-                      aria-label="Ver ubicacion del evento en Google Maps"
+                      aria-label="Ver ubicación del evento en Google Maps"
                     >
                       <MapPinIcon />
-                      Ver ubicacion
+                      Ver ubicación
                     </a>
                   </motion.div>
 
