@@ -268,7 +268,7 @@ export function InvitationCard({ encoded, plural = false }: InvitationCardProps)
   const guestName = encoded ? decodeName(encoded) : null
 
   const whatsappMessage = encodeURIComponent(
-    `¡Hola Cami! Soy ${guestName ?? 'yo'} y confirmo mi asistencia a tu comida de grado 🎓`
+    `¡Hola Cami! Soy ${guestName ?? 'yo'} y confirmo mi asistencia a tu comida de grado.`
   )
   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`
 
