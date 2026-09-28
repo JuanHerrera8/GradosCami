@@ -24,11 +24,12 @@ import { CONFIGURACION_DEFAULT } from '@/types/admin'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'InvitacionesYa | Tarjetón — Convocatorias Protocolarias & Tarjetas Formales para WhatsApp',
+  title: 'Tarjetón — Convocatorias Protocolarias & Tarjetas Formales para WhatsApp',
   description:
     'Diseñe tarjetones de invitación digitales interactivos para actos corporativos, asambleas, grados y celebraciones formales. Confirmación por WhatsApp y control de aforo.',
   keywords: [
-    'invitacionesya',
+    'tarjeton',
+    'tarjeton online',
     'tarjeton digital',
     'tarjetones de invitacion',
     'invitaciones corporativas digitales',
@@ -38,11 +39,11 @@ export const metadata: Metadata = {
     'invitaciones ejecutivas personalizadas',
   ],
   openGraph: {
-    title: 'InvitacionesYa | Tarjetón — Papelería Digital Protocolaria & Corporativa',
+    title: 'Tarjetón — Papelería Digital Protocolaria & Corporativa',
     description:
       'Diseño formal de tarjetones interactivos sin registros obligatorios. Confirmación directa en WhatsApp y control de aforo.',
-    url: 'https://invitacionesya.com',
-    siteName: 'InvitacionesYa',
+    url: 'https://www.tarjeton.online',
+    siteName: 'Tarjetón',
     locale: 'es_LA',
     type: 'website',
   },
@@ -436,7 +437,7 @@ export default async function PaginaInicio() {
           </div>
 
           <p className="text-[10px] text-slate-400 font-normal">
-            © {new Date().getFullYear()} InvitacionesYa — Tarjetón. Todos los derechos reservados.
+            © {new Date().getFullYear()} Tarjetón (tarjeton.online). Todos los derechos reservados.
           </p>
         </div>
       </footer>

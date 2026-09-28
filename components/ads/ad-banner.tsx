@@ -13,7 +13,7 @@ interface AdBannerProps {
 }
 
 /**
- * Componente oficial para Google AdSense en InvitacionesYa.
+ * Componente oficial para Google AdSense en Tarjetón (tarjeton.online).
  * Cumple con todas las directrices de Google AdSense:
  * - Etiquetado explícito y obligatorio ("Publicidad").
  * - Se elimina al 100% si esPremium === true.

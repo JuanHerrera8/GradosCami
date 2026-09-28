@@ -1,7 +1,9 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://invitacionesya.com'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.startsWith('http')
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : 'https://www.tarjeton.online'
   const fechaActual = new Date()
 
   return [

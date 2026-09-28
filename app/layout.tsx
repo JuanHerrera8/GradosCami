@@ -19,9 +19,10 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.tarjeton.online'),
   title: {
-    default: 'InvitacionesYa | Tarjetón — Papelería Digital Protocolaria & Convocatorias Formales',
-    template: '%s | InvitacionesYa',
+    default: 'Tarjetón — Papelería Digital Protocolaria & Convocatorias Formales',
+    template: '%s | Tarjetón',
   },
   description:
     'Plataforma oficial para confeccionar tarjetones e invitaciones interactivas para actos solemnes, eventos corporativos, galas y celebraciones.',
