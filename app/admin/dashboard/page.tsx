@@ -38,6 +38,7 @@ import {
   AlertTriangle,
   CalendarRange,
   Clock,
+  Edit3,
 } from 'lucide-react'
 import { TarjetonLogo } from '@/components/ui/tarjeton-logo'
 

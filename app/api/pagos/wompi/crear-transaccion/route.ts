@@ -26,7 +26,9 @@ export async function POST(request: Request) {
       integritySecret
     )
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL?.startsWith('http')
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : 'https://www.tarjeton.online'
     const redirectUrl = tokenAdmin
       ? `${appUrl}/gestionar/${tokenAdmin}?pago=exitoso`
       : `${appUrl}/crear?pago=exitoso`
