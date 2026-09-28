@@ -20,11 +20,11 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Tarjetón — Papelería Digital Protocolaria & Convocatorias Formales',
-    template: '%s | Tarjetón',
+    default: 'InvitacionesYa | Tarjetón — Papelería Digital Protocolaria & Convocatorias Formales',
+    template: '%s | InvitacionesYa',
   },
   description:
-    'Plataforma oficial para confeccionar tarjetones de invitación interactivos para actos solemnes, eventos corporativos, galas y bodas de etiqueta.',
+    'Plataforma oficial para confeccionar tarjetones e invitaciones interactivas para actos solemnes, eventos corporativos, galas y celebraciones.',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

@@ -24,10 +24,11 @@ import { CONFIGURACION_DEFAULT } from '@/types/admin'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Tarjetón — Convocatorias Protocolarias & Tarjetas Formales para WhatsApp',
+  title: 'InvitacionesYa | Tarjetón — Convocatorias Protocolarias & Tarjetas Formales para WhatsApp',
   description:
     'Diseñe tarjetones de invitación digitales interactivos para actos corporativos, asambleas, grados y celebraciones formales. Confirmación por WhatsApp y control de aforo.',
   keywords: [
+    'invitacionesya',
     'tarjeton digital',
     'tarjetones de invitacion',
     'invitaciones corporativas digitales',
@@ -37,11 +38,11 @@ export const metadata: Metadata = {
     'invitaciones ejecutivas personalizadas',
   ],
   openGraph: {
-    title: 'Tarjetón — Papelería Digital Protocolaria & Corporativa',
+    title: 'InvitacionesYa | Tarjetón — Papelería Digital Protocolaria & Corporativa',
     description:
       'Diseño formal de tarjetones interactivos sin registros obligatorios. Confirmación directa en WhatsApp y control de aforo.',
     url: 'https://invitacionesya.com',
-    siteName: 'Tarjetón',
+    siteName: 'InvitacionesYa',
     locale: 'es_LA',
     type: 'website',
   },
@@ -417,6 +418,12 @@ export default async function PaginaInicio() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-[11px] font-medium">
+            <Link href="/sobre-nosotros" className="hover:text-slate-900 transition-colors">
+              Sobre Nosotros
+            </Link>
+            <Link href="/contacto" className="hover:text-slate-900 transition-colors">
+              Contacto & Soporte
+            </Link>
             <Link href="/politica-de-privacidad" className="hover:text-slate-900 transition-colors">
               Política de Privacidad
             </Link>
@@ -426,14 +433,10 @@ export default async function PaginaInicio() {
             <Link href="/crear" className="text-slate-900 hover:underline font-semibold">
               Estudio de Confección
             </Link>
-            <Link href="/admin" className="text-slate-400 hover:text-slate-900 transition-colors inline-flex items-center gap-1">
-              <Lock size={10} />
-              <span>Consola Master</span>
-            </Link>
           </div>
 
           <p className="text-[10px] text-slate-400 font-normal">
-            © {new Date().getFullYear()} Tarjetón Studio. Todos los derechos reservados.
+            © {new Date().getFullYear()} InvitacionesYa — Tarjetón. Todos los derechos reservados.
           </p>
         </div>
       </footer>

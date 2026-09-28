@@ -32,8 +32,10 @@ export function AdBanner({
   const adClientId =
     process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT_ID || 'ca-pub-4454797114720338'
 
+  const esSlotValido = Boolean(slotId && slotId !== '1234567890' && slotId.trim() !== '')
+
   useEffect(() => {
-    if (esPremium) return
+    if (esPremium || !esSlotValido) return
 
     try {
       if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
@@ -42,7 +44,7 @@ export function AdBanner({
     } catch {
       // Manejo silencioso ante bloqueadores de publicidad
     }
-  }, [esPremium])
+  }, [esPremium, esSlotValido])
 
   // Si el usuario adquirió el plan Premium, no se renderiza NADA en el DOM
   if (esPremium) return null
@@ -90,14 +92,16 @@ export function AdBanner({
         className={`${contenedorClases} bg-slate-50/80 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center p-3 text-center relative overflow-hidden transition-all`}
       >
         {/* Contenedor oficial del anuncio Google AdSense */}
-        <ins
-          className="adsbygoogle"
-          style={{ display: 'block', width: '100%', height: '100%', textAlign: 'center' }}
-          data-ad-client={adClientId}
-          data-ad-slot={slotId}
-          data-ad-format={adFormatGoogle}
-          data-full-width-responsive="true"
-        />
+        {esSlotValido && (
+          <ins
+            className="adsbygoogle"
+            style={{ display: 'block', width: '100%', height: '100%', textAlign: 'center' }}
+            data-ad-client={adClientId}
+            data-ad-slot={slotId}
+            data-ad-format={adFormatGoogle}
+            data-full-width-responsive="true"
+          />
+        )}
 
         {/* Placeholder elegante visible mientras se aprueba la cuenta o en desarrollo */}
         <div className="flex flex-col items-center justify-center gap-1 text-slate-400 pointer-events-none select-none py-2">
