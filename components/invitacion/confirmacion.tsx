@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { DetalleEvento, ExperienciaInvitado, Invitado } from '@/types/invitation'
 import { construirUrlWhatsApp } from '@/lib/event-utils'
@@ -80,6 +80,8 @@ interface ConfirmacionAsistenciaProps {
 
 type Paso = 'pregunta' | 'si' | 'no' | 'listo'
 
+const SEGUNDOS_AUTOCIERRE = 4
+
 export function ConfirmacionAsistencia({
   abierta,
   alCerrar,
@@ -103,13 +105,28 @@ export function ConfirmacionAsistencia({
   const [resultado, setResultado] = useState<RespuestaInvitado | null>(null)
   const colores = [evento.configuracionVisual?.colorPrimario || '#B4566A', evento.configuracionVisual?.colorSecundario || '#8BA888', '#F6C445']
 
+  const [autoCierre, setAutoCierre] = useState(false)
+  const alCerrarRef = useRef(alCerrar)
+  alCerrarRef.current = alCerrar
+  const estabaAbierta = useRef(false)
+
+  // Reiniciar solo al abrir. Si dependiera de la respuesta, al confirmar volvería a la pregunta.
   useEffect(() => {
-    if (abierta) {
+    if (abierta && !estabaAbierta.current) {
       setPaso('pregunta')
       setError(null)
+      setAutoCierre(false)
       setCupos(respuestaPrevia?.estado === 'confirmado' && respuestaPrevia.cupos > 0 ? Math.min(maximo, respuestaPrevia.cupos) : maximo)
     }
+    estabaAbierta.current = abierta
   }, [abierta, maximo, respuestaPrevia])
+
+  // Tras responder, la hoja se cierra sola; se detiene si el invitado toca algo (calendario, WhatsApp)
+  useEffect(() => {
+    if (paso !== 'listo' || !autoCierre) return
+    const t = setTimeout(() => alCerrarRef.current(), SEGUNDOS_AUTOCIERRE * 1000)
+    return () => clearTimeout(t)
+  }, [paso, autoCierre])
 
   const enviar = async (estado: 'confirmado' | 'no_asiste') => {
     const nombreFinal = (real ? invitado.nombre : nombre).trim()
@@ -154,6 +171,7 @@ export function ConfirmacionAsistencia({
     setEnviando(false)
     setResultado(respuesta)
     alResponder(respuesta)
+    setAutoCierre(true)
     setPaso('listo')
   }
 
@@ -351,7 +369,7 @@ export function ConfirmacionAsistencia({
             )}
 
             {paso === 'listo' && resultado && (
-              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center', padding: '10px 0' }}>
+              <div onPointerDown={() => setAutoCierre(false)} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center', padding: '10px 0' }}>
                 {resultado.estado === 'confirmado' && experiencia.confetiAlConfirmar && <Confeti colores={colores} />}
                 <div style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: 'var(--inv-suave)', color: 'var(--inv-acento)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -377,8 +395,17 @@ export function ConfirmacionAsistencia({
                     Avisar también por WhatsApp
                   </a>
                 )}
-                <button type="button" onClick={alCerrar} style={botonPrincipal}>
-                  Listo
+                <button type="button" onClick={alCerrar} style={{ ...botonPrincipal, position: 'relative', overflow: 'hidden' }}>
+                  {autoCierre && (
+                    <motion.span
+                      aria-hidden="true"
+                      initial={{ scaleX: 1 }}
+                      animate={{ scaleX: 0 }}
+                      transition={{ duration: SEGUNDOS_AUTOCIERRE, ease: 'linear' }}
+                      style={{ position: 'absolute', left: 0, bottom: 0, width: '100%', height: 4, transformOrigin: 'left', backgroundColor: 'var(--inv-texto-acento)', opacity: 0.45 }}
+                    />
+                  )}
+                  {autoCierre ? 'Listo · se cierra sola' : 'Listo'}
                 </button>
               </div>
             )}
