@@ -113,14 +113,14 @@ export default async function PaginaInicio() {
         <TarjetonLogo size="md" subtexto="protocolo" />
 
         <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-600">
+          <a href="#licencias" className="hover:text-slate-900 transition-colors">
+            Precios
+          </a>
           <a href="#solucion" className="hover:text-slate-900 transition-colors">
             Metodología
           </a>
           <a href="#ocasiones" className="hover:text-slate-900 transition-colors">
             Plantillas
-          </a>
-          <a href="#licencias" className="hover:text-slate-900 transition-colors">
-            Condiciones & Tarifas
           </a>
         </nav>
 
@@ -169,6 +169,23 @@ export default async function PaginaInicio() {
           </a>
         </div>
 
+        {/* Precio a la vista */}
+        <a
+          href="#licencias"
+          className="mt-5 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 py-2 rounded-full bg-amber-50 border border-amber-200 text-xs text-slate-700 hover:bg-amber-100 transition-colors"
+        >
+          <span>
+            Gratis hasta <strong>{config.limiteGratisInvitados} pases</strong>
+          </span>
+          <span className="text-amber-400">·</span>
+          <span>
+            Premium ilimitado <strong>${config.precioPremiumUSD} USD</strong> pago único
+          </span>
+          <span className="font-bold text-slate-900 flex items-center gap-1">
+            Ver precios <ArrowRight size={12} />
+          </span>
+        </a>
+
         {/* Garantías de Convocatoria */}
         <div className="mt-14 grid grid-cols-2 sm:grid-cols-4 gap-4 w-full text-xs text-slate-600 border-t border-slate-200 pt-8">
           <div className="flex items-center justify-center gap-2 font-medium">
@@ -186,95 +203,8 @@ export default async function PaginaInicio() {
         </div>
       </section>
 
-      {/* Sección Arquitectura de la Solución (3 Pasos) */}
-      <section id="solucion" className="py-20 bg-slate-50 border-y border-slate-200">
-        <div className="max-w-5xl mx-auto px-6 sm:px-10">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs tracking-widest uppercase text-slate-500 font-semibold">
-              Metodología de Convocatoria
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-bold text-slate-950 mt-2">
-              Sobriedad visual sin barreras técnicas
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-              Un flujo ágil y confiable diseñado para secretarías generales, comités organizadores y anfitriones formales.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 mb-5 font-bold">
-                  <Layers size={20} />
-                </div>
-                <span className="text-[10px] tracking-widest text-slate-400 uppercase font-semibold">Paso 01</span>
-                <h3 className="text-base font-bold text-slate-900 mt-1 mb-2">
-                  Configuración Estética
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed font-normal">
-                  Personalice tipografías sobrias, paleta de colores formal, código de etiqueta y coordenadas de la sede con Google Maps.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 mb-5 font-bold">
-                  <CalendarCheck size={20} />
-                </div>
-                <span className="text-[10px] tracking-widest text-slate-400 uppercase font-semibold">Paso 02</span>
-                <h3 className="text-base font-bold text-slate-900 mt-1 mb-2">
-                  Asignación Nominal de Pases
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed font-normal">
-                  Expida credenciales nominales con el nombre de cada invitado o delegación, aforo reservado y enlace único.
-                </p>
-              </div>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 mb-5 font-bold">
-                  <MessageCircle size={20} />
-                </div>
-                <span className="text-[10px] tracking-widest text-slate-400 uppercase font-semibold">Paso 03</span>
-                <h3 className="text-base font-bold text-slate-900 mt-1 mb-2">
-                  Recepción de Asistencia por WhatsApp
-                </h3>
-                <p className="text-xs text-slate-600 leading-relaxed font-normal">
-                  Su invitado abre su pase digital y confirma con un solo toque mediante un mensaje prediseñado con sus datos.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Plantillas destacadas */}
-      <section id="ocasiones" className="w-full py-20 max-w-6xl mx-auto px-6 sm:px-10">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs tracking-widest uppercase text-slate-500 font-semibold">Plantillas listas para usar</span>
-          <h2 className="text-2xl sm:text-4xl font-bold text-slate-950 mt-2">Una invitación para cada celebración</h2>
-          <p className="text-xs sm:text-sm text-slate-600 mt-2">
-            Bodas, XV años, cumpleaños infantiles, baby shower, grados, paseos, novenas y más. Elige una, cambia los datos y compártela por WhatsApp.
-          </p>
-        </div>
-
-        <MuroPlantillas />
-
-        <div className="mt-10 flex justify-center">
-          <Link
-            href="/plantillas"
-            className="min-h-11 px-6 rounded-xl bg-slate-900 text-white text-sm font-bold flex items-center gap-2 hover:bg-slate-800"
-          >
-            Ver las {PLANTILLAS.length} plantillas
-            <ArrowRight size={16} />
-          </Link>
-        </div>
-      </section>
-
       {/* Sección Licencias y Tarifas Claras (Precio Actualizado a $3.99 USD) */}
-      <section id="licencias" className="py-20 bg-slate-50 border-t border-slate-200">
+      <section id="licencias" className="py-20 bg-white border-t border-slate-200 scroll-mt-20">
         <div className="max-w-4xl mx-auto px-6 sm:px-10 text-center">
           <span className="text-xs tracking-widest uppercase text-slate-500 font-semibold">Condiciones Transparentes</span>
           <h2 className="text-2xl sm:text-4xl font-bold text-slate-950 mt-2 mb-3">
@@ -366,6 +296,93 @@ export default async function PaginaInicio() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Sección Arquitectura de la Solución (3 Pasos) */}
+      <section id="solucion" className="py-20 bg-slate-50 border-y border-slate-200">
+        <div className="max-w-5xl mx-auto px-6 sm:px-10">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <span className="text-xs tracking-widest uppercase text-slate-500 font-semibold">
+              Metodología de Convocatoria
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-bold text-slate-950 mt-2">
+              Sobriedad visual sin barreras técnicas
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+              Un flujo ágil y confiable diseñado para secretarías generales, comités organizadores y anfitriones formales.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 mb-5 font-bold">
+                  <Layers size={20} />
+                </div>
+                <span className="text-[10px] tracking-widest text-slate-400 uppercase font-semibold">Paso 01</span>
+                <h3 className="text-base font-bold text-slate-900 mt-1 mb-2">
+                  Configuración Estética
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                  Personalice tipografías sobrias, paleta de colores formal, código de etiqueta y coordenadas de la sede con Google Maps.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 mb-5 font-bold">
+                  <CalendarCheck size={20} />
+                </div>
+                <span className="text-[10px] tracking-widest text-slate-400 uppercase font-semibold">Paso 02</span>
+                <h3 className="text-base font-bold text-slate-900 mt-1 mb-2">
+                  Asignación Nominal de Pases
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                  Expida credenciales nominales con el nombre de cada invitado o delegación, aforo reservado y enlace único.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 mb-5 font-bold">
+                  <MessageCircle size={20} />
+                </div>
+                <span className="text-[10px] tracking-widest text-slate-400 uppercase font-semibold">Paso 03</span>
+                <h3 className="text-base font-bold text-slate-900 mt-1 mb-2">
+                  Recepción de Asistencia por WhatsApp
+                </h3>
+                <p className="text-xs text-slate-600 leading-relaxed font-normal">
+                  Su invitado abre su pase digital y confirma con un solo toque mediante un mensaje prediseñado con sus datos.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Plantillas destacadas */}
+      <section id="ocasiones" className="w-full py-20 max-w-6xl mx-auto px-6 sm:px-10">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <span className="text-xs tracking-widest uppercase text-slate-500 font-semibold">Plantillas listas para usar</span>
+          <h2 className="text-2xl sm:text-4xl font-bold text-slate-950 mt-2">Una invitación para cada celebración</h2>
+          <p className="text-xs sm:text-sm text-slate-600 mt-2">
+            Bodas, XV años, cumpleaños infantiles, baby shower, grados, paseos, novenas y más. Elige una, cambia los datos y compártela por WhatsApp.
+          </p>
+        </div>
+
+        <MuroPlantillas />
+
+        <div className="mt-10 flex justify-center">
+          <Link
+            href="/plantillas"
+            className="min-h-11 px-6 rounded-xl bg-slate-900 text-white text-sm font-bold flex items-center gap-2 hover:bg-slate-800"
+          >
+            Ver las {PLANTILLAS.length} plantillas
+            <ArrowRight size={16} />
+          </Link>
         </div>
       </section>
 
