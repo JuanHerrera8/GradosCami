@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next'
+import { PLANTILLAS } from '@/lib/estudio/plantillas'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.startsWith('http')
@@ -19,6 +20,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/plantillas`,
+      lastModified: fechaActual,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    ...PLANTILLAS.map((p) => ({
+      url: `${baseUrl}/plantillas/${p.id}`,
+      lastModified: fechaActual,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
     {
       url: `${baseUrl}/sobre-nosotros`,
       lastModified: fechaActual,

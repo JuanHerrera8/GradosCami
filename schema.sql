@@ -148,3 +148,22 @@ ALTER TABLE public.configuracion_global DISABLE ROW LEVEL SECURITY;
 -- DROP POLICY IF EXISTS "Acceso total invitados" ON public.invitados;
 -- CREATE POLICY "Acceso total invitados" ON public.invitados FOR ALL USING (true) WITH CHECK (true);
 
+
+
+-- 7. ALMACENAMIENTO DE IMÁGENES DEL EDITOR (Supabase Storage)
+-- Las fotos que suben los anfitriones se guardan en este bucket público y en la
+-- base de datos solo queda su URL (antes se guardaban en base64 dentro del JSON).
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('tarjeton-media', 'tarjeton-media', true, 6291456, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO NOTHING;
+
+-- Lectura pública (los invitados ven las fotos sin iniciar sesión)
+DROP POLICY IF EXISTS "tarjeton_media_lectura_publica" ON storage.objects;
+CREATE POLICY "tarjeton_media_lectura_publica" ON storage.objects
+  FOR SELECT USING (bucket_id = 'tarjeton-media');
+
+-- Subida desde el servidor (/api/imagenes). Si configuras SUPABASE_SERVICE_ROLE_KEY en el
+-- servidor, esta política no es necesaria y puedes eliminarla para mayor seguridad.
+DROP POLICY IF EXISTS "tarjeton_media_subida" ON storage.objects;
+CREATE POLICY "tarjeton_media_subida" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'tarjeton-media');

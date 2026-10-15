@@ -62,3 +62,41 @@ export async function comprimirImagen(
     reader.readAsDataURL(archivo)
   })
 }
+
+function dataUrlABlob(dataUrl: string): Blob {
+  const [cabecera, datos] = dataUrl.split(',')
+  const tipo = cabecera.match(/data:([^;]+)/)?.[1] || 'image/jpeg'
+  const binario = atob(datos)
+  const bytes = new Uint8Array(binario.length)
+  for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i)
+  return new Blob([bytes], { type: tipo })
+}
+
+/**
+ * Comprime una imagen en el navegador y la sube a Supabase Storage vía /api/imagenes.
+ * Devuelve la URL pública que se guarda en la base de datos del evento.
+ * Acepta un File o un data URL (por ejemplo, el resultado de un recorte).
+ */
+export async function subirImagen(
+  origen: File | string,
+  carpeta: string = 'general',
+  maxDimension: number = 1600
+): Promise<string> {
+  const dataUrl = typeof origen === 'string' ? origen : await comprimirImagen(origen, maxDimension)
+
+  try {
+    const formulario = new FormData()
+    const blob = dataUrlABlob(dataUrl)
+    const extension = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
+    formulario.append('archivo', blob, `imagen.${extension}`)
+    formulario.append('carpeta', carpeta)
+
+    const respuesta = await fetch('/api/imagenes', { method: 'POST', body: formulario })
+    const resultado = await respuesta.json()
+    if (respuesta.ok && resultado?.url) return resultado.url as string
+    throw new Error(resultado?.error || 'Error subiendo imagen')
+  } catch (err) {
+    console.warn('No se pudo subir la imagen al almacenamiento, se guardará embebida:', err)
+    return dataUrl
+  }
+}

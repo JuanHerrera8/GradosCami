@@ -6,10 +6,19 @@
 export type TipoEvento =
   | 'boda'
   | 'cumpleanos'
+  | 'cumpleanos_infantil'
   | 'grado'
   | 'quince_anos'
   | 'baby_shower'
+  | 'revelacion_genero'
   | 'bautizo'
+  | 'primera_comunion'
+  | 'despedida_soltera'
+  | 'aniversario'
+  | 'paseo'
+  | 'navidad'
+  | 'amor_amistad'
+  | 'disfraces'
   | 'corporativo'
   | 'otro'
 
@@ -26,6 +35,11 @@ export type FuenteTipografica =
   | 'prata' // Didone Editorial / Alta Costura
   | 'lora' // Serif Cálida / Poética
   | 'poppins' // Geométrica Limpia / Contemporánea
+  | 'pacifico' // Cursiva divertida (infantil, playa, paseos)
+  | 'fraunces' // Serif cálida editorial
+  | 'bricolage' // Display divertida y fuerte
+  | 'fredoka' // Redondeada y tierna
+  | 'dmsans' // Moderna y neutra
 
 export type EfectoFondo =
   | 'particulas_doradas'
@@ -137,6 +151,13 @@ export type TipoSeccion =
   | 'imagen_libre'      // Fotografía o banner libre (polaroid, circular, banner)
   | 'boton_enlace'      // Botón hacia cualquier enlace web externo (Spotify, Falabella, video)
   | 'separador_ornamental' // Filete dorado, botánico, ondas o monograma decorativo
+  | 'lienzo_libre'      // Collage libre: elementos libres (texto, fotos, stickers, formas)
+  | 'historia'          // Nuestra historia / sobre el homenajeado, con foto e hitos
+  | 'padrinos'          // Padrinos, damas de honor, chambelanes, ponentes
+  | 'playlist'          // Playlist colaborativa: los invitados proponen canciones
+  | 'vaca_regalo'       // Vaca / aporte colectivo para un regalo con meta
+  | 'lista_regalos'     // Lista de regalos que cada invitado puede reservar
+  | 'juego_adivinar'    // Juego o encuesta (¿cuánto pesará?, ¿niño o niña?)
 
 export interface ElementoItinerario {
   id: string
@@ -162,6 +183,10 @@ export interface SeccionModular {
   icono?: NombreIcono
   visible: boolean
   orden: number
+  // Diseño libre tipo Canva (persistido en el JSONB `secciones`)
+  elementos?: ElementoLienzo[] // Capa de elementos libres superpuestos a la sección
+  estilo?: EstiloSeccion // Fondo, animación y alto del lienzo
+  estilosTexto?: Record<string, EstiloTexto> // Estilo individual de cada texto editable (clave = campo)
   // Campos dinámicos del bloque modular
   datos?: {
     // Cabecera / Imágenes
@@ -215,6 +240,24 @@ export interface SeccionModular {
     subtextoBoton?: string
     estiloBoton?: 'primario' | 'secundario' | 'dorado' | 'borde'
     iconoBoton?: NombreIcono
+    // Padrinos / personas destacadas
+    personas?: PersonaDestacada[]
+    // Playlist colaborativa
+    canciones?: CancionPropuesta[]
+    cancionesEliminadas?: string[] // Canciones que el anfitrión quitó (no se restauran al fusionar)
+    enlacePlaylist?: string
+    // Vaca para el regalo
+    metaVaca?: number
+    recaudadoVaca?: number
+    medioPagoVaca?: string
+    enlacePagoVaca?: string
+    // Lista de regalos reservables
+    regalos?: RegaloReservable[]
+    // Juego / encuesta
+    pregunta?: string
+    opcionesJuego?: OpcionJuego[]
+    // Texto del botón de confirmación y fecha límite
+    fechaLimiteRsvp?: string
     // Separador Ornamental
     estiloSeparador?:
       | 'linea_dorada'
@@ -228,7 +271,61 @@ export interface SeccionModular {
   }
 }
 
+export interface PersonaDestacada {
+  id: string
+  nombre: string
+  rol?: string
+}
+
+export interface CancionPropuesta {
+  id: string
+  titulo: string
+  artista?: string
+  propuestaPor?: string
+}
+
+export interface RegaloReservable {
+  id: string
+  nombre: string
+  enlace?: string
+  reservadoPor?: string
+}
+
+export interface OpcionJuego {
+  id: string
+  texto: string
+  votos?: number
+}
+
 export type MetodoConfirmacion = 'tarjeton' | 'whatsapp' | 'ambos'
+
+// ─────────── Rediseño v2: kits de estilo y experiencia del invitado ───────────
+
+export type TipoApertura = 'sobre' | 'telon' | 'raspa' | 'caja' | 'directo'
+export type TipoRecorrido = 'pagina' | 'historias' | 'menu'
+export type TipoOrnamento =
+  | 'ramas'
+  | 'filigrana'
+  | 'confeti'
+  | 'nubes'
+  | 'palmas'
+  | 'lineas'
+  | 'estrellas'
+  | 'globos'
+  | 'corazones'
+  | 'mariposas'
+  | 'hojas'
+  | 'copos'
+  | 'ninguno'
+export type TipoEsquinas = 'rectas' | 'suaves' | 'redondas'
+
+export interface ExperienciaInvitado {
+  apertura: TipoApertura
+  recorrido: TipoRecorrido
+  saludoPersonal: boolean
+  confetiAlConfirmar: boolean
+  botonCalendario: boolean
+}
 
 export type FormaTarjeta = 'clasica' | 'arco' | 'doble_borde' | 'biselada'
 
@@ -284,6 +381,11 @@ export interface ConfiguracionVisual {
   colorLacre?: ColorLacreTipo // Tonalidad del sello de lacre
   forroSobre?: ForroSobreTipo // Patrón decorativo del forro interior
   textoImpresoSobre?: string // Texto de caligrafía o encabezado protocolario impreso en el sobre (ej: "Pase de Honor Protocolario", "Invitación Formal")
+  // Rediseño v2
+  kitId?: string // Kit de estilo aplicado (jardin, gala, pop, nube, tropical, minimal...)
+  esquinas?: TipoEsquinas
+  ornamento?: TipoOrnamento // Ornamento del kit, siempre en bordes o detrás del texto
+  experiencia?: ExperienciaInvitado
   mostrarCuentaRegresiva: boolean
   mostrarUbicacion: boolean
   mostrarDressCode: boolean
@@ -351,3 +453,104 @@ export interface Invitado {
 
 // Constante de negocio: Límite de invitados gratuitos
 export const LIMITE_INVITADOS_GRATIS = 50
+
+// ════════════════════ EDITOR LIBRE TIPO CANVA ════════════════════
+
+export type AnimacionEntrada =
+  | 'ninguna'
+  | 'aparecer'
+  | 'deslizar_arriba'
+  | 'deslizar_izquierda'
+  | 'deslizar_derecha'
+  | 'zoom'
+  | 'rebote'
+  | 'girar'
+
+/**
+ * Estilo individual de un texto. Las propiedades vacías heredan el tema global,
+ * así un cambio de paleta o tipografía sigue aplicando a lo no personalizado.
+ */
+export interface EstiloTexto {
+  fuente?: FuenteTipografica
+  tamano?: number // px (en elementos libres: px sobre un lienzo de 400px de ancho, escala con la pantalla)
+  color?: string
+  peso?: number // 300–800
+  cursiva?: boolean
+  subrayado?: boolean
+  mayusculas?: boolean
+  alineacion?: 'izquierda' | 'centro' | 'derecha'
+  interletrado?: number // em
+  interlineado?: number // múltiplo
+  sombra?: 'ninguna' | 'suave' | 'marcada' | 'brillo'
+  colorFondo?: string // resaltado detrás del texto
+}
+
+export type TipoElementoLienzo = 'texto' | 'imagen' | 'sticker' | 'icono' | 'forma'
+
+export type MascaraImagen =
+  | 'ninguna'
+  | 'redondeada'
+  | 'circulo'
+  | 'arco'
+  | 'corazon'
+  | 'estrella'
+  | 'hexagono'
+  | 'gota'
+
+export type FiltroImagen = 'ninguno' | 'bn' | 'sepia' | 'calido' | 'frio' | 'suave' | 'contraste' | 'vintage'
+
+export type FormaGeometrica = 'rectangulo' | 'circulo' | 'linea' | 'triangulo' | 'rombo'
+
+/**
+ * Elemento libre posicionado dentro de una sección.
+ * Las coordenadas son porcentajes para que el diseño sea idéntico en cualquier pantalla:
+ *  - x, ancho, alto: % del ancho de la sección
+ *  - y: % del alto de la sección
+ */
+export interface ElementoLienzo {
+  id: string
+  tipo: TipoElementoLienzo
+  x: number
+  y: number
+  ancho: number
+  alto?: number // ausente en textos (alto automático según contenido)
+  rotacion: number
+  opacidad: number // 0–1
+  z: number
+  bloqueado?: boolean
+  oculto?: boolean
+  animacion?: AnimacionEntrada
+  volteoH?: boolean
+  volteoV?: boolean
+  // Texto
+  texto?: string
+  estiloTexto?: EstiloTexto
+  // Imagen
+  url?: string
+  mascara?: MascaraImagen
+  filtro?: FiltroImagen
+  bordeAncho?: number
+  bordeColor?: string
+  radio?: number
+  sombra?: boolean
+  // Sticker / icono
+  stickerId?: string
+  icono?: NombreIcono
+  color?: string
+  // Forma
+  forma?: FormaGeometrica
+  colorRelleno?: string
+  colorBorde?: string
+  grosorBorde?: number
+}
+
+export interface EstiloSeccion {
+  variante?: string // Distribución del bloque (p. ej. 'tarjeta' | 'linea' | 'columnas')
+  fondoBloque?: 'tarjeta' | 'sin_fondo' | 'foto'
+  ornamento?: { activo: boolean; posicion: 'esquinas' | 'arriba' | 'detras' }
+  colorFondo?: string
+  imagenFondo?: string
+  opacidadImagenFondo?: number // 0–1
+  animacion?: AnimacionEntrada
+  alturaLienzo?: number // Solo lienzo_libre: alto como % del ancho (100 = cuadrado)
+}

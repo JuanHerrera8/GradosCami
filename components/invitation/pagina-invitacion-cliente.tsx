@@ -4,9 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { DetalleEvento, Invitado } from '@/types/invitation'
 import { EventoRepositorio, InvitadoRepositorio } from '@/lib/storage'
-import { DynamicInvitationCard } from './dynamic-invitation-card'
-import { SobreAperturaAnimado } from './sobre-apertura-animado'
-import { TEMA_POR_DEFECTO } from '@/lib/theme-presets'
+import { Invitacion } from '@/components/invitacion/invitacion'
 import { haExpirado } from '@/lib/event-utils'
 import { Calendar, ArrowRight, RefreshCw, AlertCircle, Sparkles } from 'lucide-react'
 
@@ -57,24 +55,8 @@ export function PaginaInvitacionCliente({
     setNoEncontrado(false)
 
     try {
-      // A. Buscar en almacenamiento local del navegador (si es el dispositivo del anfitrión)
-      const guardadoLocal = EventoRepositorio.obtenerPorSlug(slug)
-      if (guardadoLocal && guardadoLocal.id !== 'demo') {
-        setEvento(guardadoLocal)
-
-        // Respaldo proactivo: si el anfitrión tiene el evento en local, asegurar que el servidor también lo tenga
-        fetch('/api/eventos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(guardadoLocal),
-        }).catch(() => {})
-
-        setReintentando(false)
-        return guardadoLocal
-      }
-
-      // B. Consultar la API del servidor (fundamental para invitados en celulares y otros dispositivos)
-      const res = await fetch(`/api/eventos?slug=${encodeURIComponent(slug)}`)
+      // La base de datos es la fuente de verdad: el invitado ve exactamente lo que el anfitrión guardó
+      const res = await fetch(`/api/eventos?slug=${encodeURIComponent(slug)}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         if (data?.evento && data.evento.id !== 'demo') {
@@ -84,7 +66,7 @@ export function PaginaInvitacionCliente({
         }
       }
 
-      // Si no se encontró en local ni en el servidor
+      // Si no se encontró en el servidor
       setNoEncontrado(true)
     } catch (err) {
       console.error('Error cargando invitación:', err)
@@ -100,18 +82,10 @@ export function PaginaInvitacionCliente({
   useEffect(() => {
     setMontado(true)
 
-    // Si ya vino resuelto desde SSR, sincronizar proactivamente al servidor
-    if (evento && evento.id !== 'demo') {
-      fetch('/api/eventos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(evento),
-      }).catch(() => {})
-      return
-    }
+    // Si ya vino resuelto desde el servidor (SSR) se usa tal cual; si no, se consulta la API
+    const obtenerEvento = evento ? Promise.resolve(evento) : cargarEvento()
 
-    // Si no tenemos evento aún, cargarlo
-    cargarEvento().then((ev) => {
+    obtenerEvento.then((ev) => {
       const eventoActual = ev || evento
       if (!eventoActual) return
 
@@ -237,19 +211,5 @@ export function PaginaInvitacionCliente({
     )
   }
 
-  const visualActual = evento.configuracionVisual || TEMA_POR_DEFECTO
-
-  return (
-    <SobreAperturaAnimado
-      evento={evento}
-      visual={visualActual}
-      invitado={invitado}
-    >
-      <DynamicInvitationCard
-        evento={evento}
-        visual={visualActual}
-        invitado={invitado}
-      />
-    </SobreAperturaAnimado>
-  )
+  return <Invitacion evento={evento} invitado={invitado} modo="publico" />
 }

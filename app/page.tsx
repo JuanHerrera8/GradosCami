@@ -20,6 +20,8 @@ import { TarjetonLogo } from '@/components/ui/tarjeton-logo'
 import { ServidorAlmacen } from '@/lib/server-storage'
 import { obtenerClienteSupabase } from '@/lib/supabase'
 import { CONFIGURACION_DEFAULT } from '@/types/admin'
+import { PLANTILLAS } from '@/lib/estudio/plantillas'
+import { MuroPlantillas } from '@/components/plantillas/muro-plantillas'
 
 export const dynamic = 'force-dynamic'
 
@@ -115,7 +117,7 @@ export default async function PaginaInicio() {
             Metodología
           </a>
           <a href="#ocasiones" className="hover:text-slate-900 transition-colors">
-            Actos Formales
+            Plantillas
           </a>
           <a href="#licencias" className="hover:text-slate-900 transition-colors">
             Condiciones & Tarifas
@@ -248,69 +250,26 @@ export default async function PaginaInicio() {
         </div>
       </section>
 
-      {/* Sección Tipos de Acto */}
-      <section id="ocasiones" className="py-20 max-w-5xl mx-auto px-6 sm:px-10">
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="text-xs tracking-widest uppercase text-slate-500 font-semibold">Casos de Aplicación</span>
-          <h2 className="text-2xl sm:text-4xl font-bold text-slate-950 mt-2">
-            Versatilidad para toda ocasión de etiqueta
-          </h2>
+      {/* Plantillas destacadas */}
+      <section id="ocasiones" className="w-full py-20 max-w-6xl mx-auto px-6 sm:px-10">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <span className="text-xs tracking-widest uppercase text-slate-500 font-semibold">Plantillas listas para usar</span>
+          <h2 className="text-2xl sm:text-4xl font-bold text-slate-950 mt-2">Una invitación para cada celebración</h2>
           <p className="text-xs sm:text-sm text-slate-600 mt-2">
-            Estructuras visuales equilibradas para garantizar una presentación impecable.
+            Bodas, XV años, cumpleaños infantiles, baby shower, grados, paseos, novenas y más. Elige una, cambia los datos y compártela por WhatsApp.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[
-            {
-              titulo: 'Cumbres & Actos Corporativos',
-              tipo: 'Lanzamientos, juntas directivas, asambleas de socios y cócteles institucionales.',
-              icono: <Building2 size={20} className="text-slate-800" />,
-            },
-            {
-              titulo: 'Bodas & Enlaces de Etiqueta',
-              tipo: 'Ceremonias solemnes con indicación de código de vestimenta y mapa interactivo.',
-              icono: <Sparkles size={20} className="text-slate-800" />,
-            },
-            {
-              titulo: 'Grados Académicos & Distinciones',
-              tipo: 'Ceremonias universitarias, defensas de grado y conmemoraciones de honor.',
-              icono: <Award size={20} className="text-slate-800" />,
-            },
-            {
-              titulo: 'Galas de Aniversario & Premiaciones',
-              tipo: 'Homenajes institucionales, cenas de beneficencia y eventos de gala formal.',
-              icono: <Shield size={20} className="text-slate-800" />,
-            },
-            {
-              titulo: 'Conferencias & Networking Ejecutivo',
-              tipo: 'Reuniones de directivos, simposios y jornadas formativas especializadas.',
-              icono: <Layers size={20} className="text-slate-800" />,
-            },
-            {
-              titulo: 'Celebraciones Privadas Exclusivas',
-              tipo: 'Reuniones de alto nivel que exigen confidencialidad y estricto control de aforo.',
-              icono: <CalendarCheck size={20} className="text-slate-800" />,
-            },
-          ].map((item) => (
-            <div
-              key={item.titulo}
-              className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-slate-400 transition-all flex flex-col justify-between shadow-2xs"
-            >
-              <div>
-                <div className="mb-4">{item.icono}</div>
-                <h3 className="font-bold text-sm text-slate-900">{item.titulo}</h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-normal">{item.tipo}</p>
-              </div>
-              <Link
-                href="/crear"
-                className="mt-6 text-xs font-semibold text-slate-900 hover:underline flex items-center gap-1.5"
-              >
-                <span>Confeccionar en este estilo</span>
-                <ArrowRight size={13} />
-              </Link>
-            </div>
-          ))}
+        <MuroPlantillas />
+
+        <div className="mt-10 flex justify-center">
+          <Link
+            href="/plantillas"
+            className="min-h-11 px-6 rounded-xl bg-slate-900 text-white text-sm font-bold flex items-center gap-2 hover:bg-slate-800"
+          >
+            Ver las {PLANTILLAS.length} plantillas
+            <ArrowRight size={16} />
+          </Link>
         </div>
       </section>
 

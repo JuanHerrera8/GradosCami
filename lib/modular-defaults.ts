@@ -16,11 +16,60 @@ export interface MetaSeccion {
 
 export const CATALOGO_SECCIONES: MetaSeccion[] = [
   {
+    tipo: 'historia',
+    nombre: 'Nuestra historia',
+    descripcion: 'Cuéntales cómo empezó todo, con una foto especial',
+    iconoDefecto: 'heart',
+    tituloDefecto: 'Nuestra historia',
+  },
+  {
+    tipo: 'padrinos',
+    nombre: 'Padrinos y personas especiales',
+    descripcion: 'Padrinos, damas de honor, chambelanes o ponentes',
+    iconoDefecto: 'users',
+    tituloDefecto: 'Nuestros padrinos',
+  },
+  {
+    tipo: 'playlist',
+    nombre: 'Playlist colaborativa',
+    descripcion: 'Los invitados proponen la canción que no puede faltar',
+    iconoDefecto: 'music',
+    tituloDefecto: 'Playlist de la fiesta',
+  },
+  {
+    tipo: 'vaca_regalo',
+    nombre: 'Vaca para el regalo',
+    descripcion: 'Aporte entre todos con meta y medio de pago',
+    iconoDefecto: 'wallet',
+    tituloDefecto: 'Vaca para el regalo',
+  },
+  {
+    tipo: 'lista_regalos',
+    nombre: 'Lista de regalos',
+    descripcion: 'Cada invitado reserva un regalo para que nadie repita',
+    iconoDefecto: 'gift',
+    tituloDefecto: 'Lista de regalos',
+  },
+  {
+    tipo: 'juego_adivinar',
+    nombre: 'Juego / encuesta',
+    descripcion: 'Que los invitados adivinen o voten (¿cuánto pesará?, ¿niño o niña?)',
+    iconoDefecto: 'star',
+    tituloDefecto: 'Juego',
+  },
+  {
     tipo: 'cabecera',
     nombre: 'Cabecera & Portada',
     descripcion: 'Título del acto, anfitriones, fotografía de portada y logotipo central',
     iconoDefecto: 'sparkles',
     tituloDefecto: 'Convocatoria Oficial',
+  },
+  {
+    tipo: 'lienzo_libre',
+    nombre: 'Collage libre',
+    descripcion: 'Un espacio propio para ubicar libremente textos, fotos y stickers',
+    iconoDefecto: 'feather',
+    tituloDefecto: 'Lienzo Libre',
   },
   {
     tipo: 'cuenta_regresiva',
@@ -460,6 +509,48 @@ export function crearSeccionPorTipo(tipo: TipoSeccion, orden: number): SeccionMo
         datos: {
           estiloSeparador: 'linea_dorada',
         },
+      }
+    case 'historia':
+      return { id: idUnico, tipo, titulo: meta.tituloDefecto, subtitulo: '', icono: meta.iconoDefecto, visible: true, orden, datos: { cuerpoTexto: '' } }
+    case 'padrinos':
+      return { id: idUnico, tipo, titulo: meta.tituloDefecto, subtitulo: '', icono: meta.iconoDefecto, visible: true, orden, datos: { personas: [] } }
+    case 'playlist':
+      return { id: idUnico, tipo, titulo: meta.tituloDefecto, subtitulo: 'Agrega la canción que no puede faltar.', icono: meta.iconoDefecto, visible: true, orden, datos: { canciones: [] } }
+    case 'vaca_regalo':
+      return { id: idUnico, tipo, titulo: meta.tituloDefecto, subtitulo: 'Entre todos le damos un regalo especial.', icono: meta.iconoDefecto, visible: true, orden, datos: { metaVaca: 0, recaudadoVaca: 0, medioPagoVaca: '' } }
+    case 'lista_regalos':
+      return { id: idUnico, tipo, titulo: meta.tituloDefecto, subtitulo: 'Reserva uno para que nadie repita.', icono: meta.iconoDefecto, visible: true, orden, datos: { regalos: [] } }
+    case 'juego_adivinar':
+      return {
+        id: idUnico, tipo, titulo: meta.tituloDefecto, subtitulo: '', icono: meta.iconoDefecto, visible: true, orden,
+        datos: { pregunta: '¿Qué crees?', opcionesJuego: [{ id: `op-${Date.now()}-1`, texto: 'Opción A', votos: 0 }, { id: `op-${Date.now()}-2`, texto: 'Opción B', votos: 0 }] },
+      }
+    case 'lienzo_libre':
+      return {
+        id: idUnico,
+        tipo,
+        titulo: 'Lienzo Libre',
+        subtitulo: '',
+        icono: meta.iconoDefecto,
+        visible: true,
+        orden,
+        estilo: { alturaLienzo: 75, animacion: 'aparecer' },
+        elementos: [
+          {
+            id: `el-` + Math.random().toString(36).slice(2, 10),
+            tipo: 'texto',
+            x: 10,
+            y: 38,
+            ancho: 80,
+            rotacion: 0,
+            opacidad: 1,
+            z: 1,
+            texto: 'Nuestra historia',
+            estiloTexto: { tamano: 40, alineacion: 'centro', fuente: 'greatvibes' },
+            animacion: 'deslizar_arriba',
+          },
+        ],
+        datos: {},
       }
     default:
       return {

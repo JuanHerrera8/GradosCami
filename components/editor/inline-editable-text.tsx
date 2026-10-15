@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
-import { Pencil } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useEditorLienzo, useSeccionActual } from './lienzo/contexto-editor'
+import { atributosFuente, estiloTextoACss, leerTextoEditable } from '@/lib/editor/estilos'
 
 interface InlineEditableTextProps {
   valor: string
@@ -12,12 +13,30 @@ interface InlineEditableTextProps {
   etiqueta?: 'h1' | 'h2' | 'h3' | 'h4' | 'p' | 'span' | 'div'
   className?: string
   style?: React.CSSProperties
+  /** Clave del campo: permite guardar un estilo individual (fuente, tamaño, color...) para este texto */
+  campo?: string
+}
+
+/** Coloca el texto plano del portapapeles sin formato externo */
+function pegarComoTextoPlano(e: React.ClipboardEvent) {
+  e.preventDefault()
+  const texto = e.clipboardData.getData('text/plain')
+  document.execCommand('insertText', false, texto)
+}
+
+function seleccionarContenido(el: HTMLElement) {
+  const rango = document.createRange()
+  rango.selectNodeContents(el)
+  const sel = window.getSelection()
+  sel?.removeAllRanges()
+  sel?.addRange(rango)
 }
 
 /**
- * Componente robusto de edición directa in-place.
- * Alterna entre vista tipográfica y un input/textarea nativo en 1 clic,
- * evitando caídas o congelamientos de reconciliación en React 19.
+ * Texto editable directamente sobre la tarjeta (WYSIWYG).
+ * - Un toque lo selecciona y muestra la barra de estilo (fuente, tamaño, color...).
+ * - Un segundo toque o doble clic permite escribir sobre el propio texto, con su tipografía real.
+ * - Su estilo individual se guarda en la sección (`estilosTexto[campo]`) y se ve igual en la invitación publicada.
  */
 export function InlineEditableText({
   valor,
@@ -28,112 +47,136 @@ export function InlineEditableText({
   etiqueta: Etiqueta = 'p',
   className = '',
   style,
+  campo,
 }: InlineEditableTextProps) {
-  const [estaEditando, setEstaEditando] = useState(false)
-  const [textoLocal, setTextoLocal] = useState(valor || '')
-  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const editor = useEditorLienzo()
+  const seccion = useSeccionActual()
+  const ref = useRef<HTMLElement | null>(null)
+  const [edicionLocal, setEdicionLocal] = useState(false)
 
-  // Sincronizar estado local si el valor exterior cambia
+  const estiloPropio = campo ? seccion?.estilosTexto?.[campo] : undefined
+  const estiloFinal: React.CSSProperties = {
+    ...style,
+    ...estiloTextoACss(estiloPropio),
+    ...(multilinea ? { whiteSpace: 'pre-line' } : {}),
+  }
+  const atributos = atributosFuente(estiloPropio)
+
+  const claveTexto = seccion && campo ? `${seccion.id}:${campo}` : null
+  const usaSeleccion = Boolean(claveTexto && editor.esEdicion)
+  const estaEditando = usaSeleccion ? editor.textoEnEdicion === claveTexto : edicionLocal
+  const estaSeleccionado =
+    usaSeleccion &&
+    editor.seleccion?.tipo === 'texto' &&
+    editor.seleccion.seccionId === seccion?.id &&
+    editor.seleccion.campo === campo
+
+  // Al entrar en edición: cargar el texto actual, enfocar y seleccionar todo
   useEffect(() => {
-    setTextoLocal(valor || '')
-  }, [valor])
+    if (!estaEditando || !ref.current) return
+    const el = ref.current
+    el.textContent = valor || ''
+    el.focus({ preventScroll: true })
+    seleccionarContenido(el)
+    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estaEditando])
 
-  // Si no está en modo editor, renderizar texto estático normal
   if (!activo) {
     return (
-      <Etiqueta className={className} style={style}>
+      <Etiqueta className={className} style={estiloFinal} {...atributos}>
         {valor || ''}
       </Etiqueta>
     )
   }
 
-  const iniciarEdicion = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setTextoLocal(valor || '')
-    setEstaEditando(true)
-  }
-
-  const finalizarEdicion = () => {
-    setEstaEditando(false)
-    const limpio = textoLocal.trim()
-    if (limpio !== (valor || '')) {
-      alGuardar(limpio)
+  const iniciarEdicion = () => {
+    if (usaSeleccion && claveTexto) {
+      editor.seleccionar({ tipo: 'texto', seccionId: seccion!.id, campo: campo! })
+      editor.setTextoEnEdicion(claveTexto)
+    } else {
+      setEdicionLocal(true)
     }
   }
 
-  const cancelarEdicion = () => {
-    setTextoLocal(valor || '')
-    setEstaEditando(false)
+  const terminarEdicion = (guardar: boolean) => {
+    const el = ref.current
+    const nuevo = el ? leerTextoEditable(el).trim() : ''
+    if (usaSeleccion) {
+      if (editor.textoEnEdicion === claveTexto) editor.setTextoEnEdicion(null)
+    } else {
+      setEdicionLocal(false)
+    }
+    if (guardar && nuevo !== (valor || '')) {
+      alGuardar(nuevo)
+    }
+  }
+
+  const manejarClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (estaEditando) return
+    if (!usaSeleccion || estaSeleccionado) {
+      iniciarEdicion()
+    } else {
+      editor.seleccionar({ tipo: 'texto', seccionId: seccion!.id, campo: campo! })
+    }
   }
 
   const manejarKeyDown = (e: React.KeyboardEvent) => {
-    if (!multilinea && e.key === 'Enter') {
+    if (e.key === 'Escape') {
       e.preventDefault()
-      finalizarEdicion()
-    } else if (e.key === 'Escape') {
+      if (ref.current) ref.current.textContent = valor || ''
+      terminarEdicion(false)
+      ref.current?.blur()
+    } else if (e.key === 'Enter' && (!multilinea || e.ctrlKey || e.metaKey)) {
       e.preventDefault()
-      cancelarEdicion()
+      ref.current?.blur()
     }
+    e.stopPropagation()
   }
 
-  // ── ESTADO EDITANDO (INPUT NATIVO CONTROLADO) ──
   if (estaEditando) {
-    const clasesInput = `w-full bg-amber-50/90 text-slate-900 ring-2 ring-amber-400 rounded-lg px-2 py-1 outline-none transition-all shadow-inner text-center font-inherit ${className}`
-
-    if (multilinea) {
-      return (
-        <textarea
-          ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-          value={textoLocal}
-          onChange={(e) => setTextoLocal(e.target.value)}
-          onBlur={finalizarEdicion}
-          onKeyDown={manejarKeyDown}
-          autoFocus
-          onFocus={(e) => e.currentTarget.select()}
-          rows={3}
-          className={clasesInput}
-          style={style}
-          placeholder={placeholder}
-        />
-      )
-    }
-
     return (
-      <input
-        ref={inputRef as React.RefObject<HTMLInputElement>}
-        type="text"
-        value={textoLocal}
-        onChange={(e) => setTextoLocal(e.target.value)}
-        onBlur={finalizarEdicion}
+      <Etiqueta
+        ref={ref as any}
+        data-texto-clave={claveTexto || undefined}
+        contentEditable="plaintext-only"
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        onBlur={() => terminarEdicion(true)}
         onKeyDown={manejarKeyDown}
-        autoFocus
-        onFocus={(e) => e.currentTarget.select()}
-        className={clasesInput}
-        style={style}
-        placeholder={placeholder}
+        onPaste={pegarComoTextoPlano}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        onPointerDown={(e: React.PointerEvent) => e.stopPropagation()}
+        className={`texto-editando relative inline-block max-w-full min-w-[2ch] px-1.5 py-0.5 ${className}`}
+        style={estiloFinal}
+        {...atributos}
       />
     )
   }
 
-  // ── ESTADO REPOSO EN MODO EDICIÓN DIRECTA ──
   const esVacio = !valor || valor.trim() === ''
 
   return (
     <Etiqueta
-      onClick={iniciarEdicion}
-      title="Texto de ejemplo — Haz clic para escribir tu información real"
+      data-texto-clave={claveTexto || undefined}
+      onClick={manejarClick}
+      onDoubleClick={(e: React.MouseEvent) => {
+        e.stopPropagation()
+        iniciarEdicion()
+      }}
+      title={estaSeleccionado ? 'Toca de nuevo para escribir' : 'Toca para seleccionar y dar estilo'}
       className={`relative group/editable cursor-pointer transition-all rounded-lg px-1.5 py-0.5 inline-block max-w-full ${className} ${
-        esVacio
+        estaSeleccionado
+          ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-transparent'
+          : esVacio
           ? 'italic opacity-60 bg-amber-400/10 border border-dashed border-amber-400/50'
           : 'hover:ring-2 hover:ring-amber-400/70 hover:bg-amber-400/10'
       }`}
-      style={style}
+      style={estiloFinal}
+      {...atributos}
     >
-      <span>{valor || placeholder}</span>
-      <span className="inline-flex items-center ml-1.5 opacity-0 group-hover/editable:opacity-100 bg-slate-900 text-white text-[9px] font-sans font-bold px-1.5 py-0.5 rounded shadow-sm transition-opacity align-middle pointer-events-none select-none">
-        <Pencil size={9} className="mr-0.5" />
-        <span>Editar</span>
-      </span>
+      {valor || placeholder}
     </Etiqueta>
   )
 }

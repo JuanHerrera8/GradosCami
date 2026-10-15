@@ -89,6 +89,94 @@
 .font-poppins {
   font-family: 'Poppins', sans-serif !important;
 }
+.font-pacifico {
+  font-family: 'Pacifico', cursive !important;
+}
+.font-fraunces {
+  font-family: 'Fraunces', serif !important;
+}
+.font-bricolage {
+  font-family: 'Bricolage Grotesque', sans-serif !important;
+}
+.font-fredoka {
+  font-family: 'Fredoka', sans-serif !important;
+}
+.font-dmsans {
+  font-family: 'DM Sans', sans-serif !important;
+}
 .font-dancing {
   font-family: 'Dancing Script', cursive !important;
+}
+
+/* ═══════════ Editor libre tipo Canva ═══════════ */
+
+/* Fuente propia por texto: más específica que las clases de fuente del tema (que usan !important) */
+[data-fuente][data-fuente='greatvibes'] { font-family: 'Great Vibes', cursive !important; }
+[data-fuente][data-fuente='alexbrush'] { font-family: 'Alex Brush', cursive !important; }
+[data-fuente][data-fuente='parisienne'] { font-family: 'Parisienne', cursive !important; }
+[data-fuente][data-fuente='dancing'] { font-family: 'Dancing Script', cursive !important; }
+[data-fuente][data-fuente='playfair'] { font-family: 'Playfair Display', serif !important; }
+[data-fuente][data-fuente='cormorant'] { font-family: 'Cormorant Garamond', serif !important; }
+[data-fuente][data-fuente='cinzel'] { font-family: 'Cinzel', serif !important; }
+[data-fuente][data-fuente='prata'] { font-family: 'Prata', serif !important; }
+[data-fuente][data-fuente='lora'] { font-family: 'Lora', serif !important; }
+[data-fuente][data-fuente='montserrat'] { font-family: 'Montserrat', sans-serif !important; }
+[data-fuente][data-fuente='poppins'] { font-family: 'Poppins', sans-serif !important; }
+[data-fuente][data-fuente='pacifico'] { font-family: 'Pacifico', cursive !important; }
+[data-fuente][data-fuente='fraunces'] { font-family: 'Fraunces', serif !important; }
+[data-fuente][data-fuente='bricolage'] { font-family: 'Bricolage Grotesque', sans-serif !important; }
+[data-fuente][data-fuente='fredoka'] { font-family: 'Fredoka', sans-serif !important; }
+[data-fuente][data-fuente='dmsans'] { font-family: 'DM Sans', sans-serif !important; }
+[data-fuente][data-fuente='inter'] { font-family: var(--font-inter), 'Inter', sans-serif !important; }
+
+/* Cada sección es un contenedor: los elementos libres se dimensionan en cqw y escalan con la pantalla */
+.seccion-lienzo {
+  container-type: inline-size;
+}
+
+/* Texto en edición directa (WYSIWYG): conserva la tipografía real de la tarjeta */
+.texto-editando {
+  outline: 2px solid #f59e0b;
+  outline-offset: 3px;
+  border-radius: 6px;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+  caret-color: #f59e0b;
+}
+.texto-editando:empty::before {
+  content: attr(data-placeholder);
+  opacity: 0.45;
+}
+
+/* Elementos libres: evitar selección de texto y gestos del navegador mientras se arrastran */
+.elemento-lienzo-editable {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Asas de Moveable con la identidad de Tarjetón y áreas táctiles más grandes en celular */
+.tarjeton-moveable {
+  --moveable-color: #f59e0b;
+}
+.tarjeton-moveable .moveable-control {
+  border: 2px solid #fff !important;
+  background: #f59e0b !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.35);
+}
+.tarjeton-moveable .moveable-line {
+  background: #f59e0b !important;
+}
+.tarjeton-moveable .moveable-rotation-control {
+  background: #0f172a !important;
+}
+@media (pointer: coarse) {
+  .tarjeton-moveable .moveable-control {
+    width: 20px !important;
+    height: 20px !important;
+    margin-top: -10px !important;
+    margin-left: -10px !important;
+  }
 }

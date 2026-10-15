@@ -95,13 +95,94 @@ export function mapearInvitadoDesdeDb(fila: any): Invitado {
 }
 
 /**
+ * Convierte un DetalleEvento a la fila de la tabla `eventos` de Supabase.
+ * Toda la edición visual (secciones, elementos libres, estilos por texto) viaja en
+ * las columnas JSONB `secciones` y `configuracion_visual`.
+ */
+export function mapearEventoAFila(evento: DetalleEvento) {
+  return {
+    id: evento.id,
+    token_admin: evento.tokenAdmin,
+    slug_publico: evento.slugPublico,
+    tipo_evento: evento.tipoEvento,
+    titulo: evento.titulo,
+    subtitulo: evento.subtitulo || null,
+    anfitriones: evento.anfitriones,
+    fecha_evento: evento.fechaEvento,
+    hora_evento: evento.horaEvento || '',
+    direccion: evento.direccion,
+    enlace_mapa: evento.enlaceMapa || '',
+    codigo_vestimenta: evento.codigoVestimenta || null,
+    paleta_vestimenta: evento.paletaVestimenta || [],
+    datos_bancarios: evento.datosBancarios || {},
+    whatsapp_numero: evento.whatsappNumero,
+    whatsapp_plantilla: evento.whatsappPlantilla,
+    fotos_galeria: evento.fotosGaleria || [],
+    imagen_portada: evento.imagenPortada || null,
+    imagen_retrato: evento.imagenRetrato || null,
+    mostrar_foto_retrato: evento.mostrarFotoRetrato !== false,
+    mostrar_badge: evento.mostrarBadge !== false,
+    texto_badge: evento.textoBadge || null,
+    es_premium: Boolean(evento.esPremium),
+    configuracion_visual: {
+      ...(evento.configuracionVisual || {}),
+      limiteGratisInvitados:
+        evento.limiteGratisInvitados ||
+        (evento.configuracionVisual as any)?.limiteGratisInvitados ||
+        50,
+    },
+    secciones: evento.secciones || [],
+    metodo_confirmacion: evento.metodoConfirmacion || 'tarjeton',
+    expira_en: evento.expiraEn,
+  }
+}
+
+/**
+ * Versión pública de un evento: nunca expone el token de administración a los invitados.
+ */
+export function limpiarEventoPublico(evento: DetalleEvento): DetalleEvento {
+  return { ...evento, tokenAdmin: '' }
+}
+
+function guardarCacheLocal(evento: DetalleEvento): void {
+  if (typeof window === 'undefined') return
+  try {
+    const eventos = EventoRepositorio.obtenerTodos().filter((e) => e.id !== evento.id)
+    eventos.push(evento)
+    localStorage.setItem(LOCAL_STORAGE_KEY_EVENTOS, JSON.stringify(eventos))
+  } catch (e) {
+    console.warn('Advertencia guardando caché en localStorage:', e)
+  }
+}
+
+/**
+ * Consulta un evento en Supabase.
+ * `respondio` = la base de datos contestó (aunque no exista): en ese caso no se usa la caché local,
+ * para no servir copias de eventos borrados o desactualizados.
+ */
+async function consultarSupabase(
+  columna: 'token_admin' | 'slug_publico',
+  valor: string
+): Promise<{ evento: DetalleEvento | null; respondio: boolean }> {
+  const supabase = obtenerClienteSupabase()
+  if (!supabase) return { evento: null, respondio: false }
+  const { data, error } = await supabase.from('eventos').select('*').eq(columna, valor).maybeSingle()
+  if (error) {
+    console.warn(`Error consultando evento por ${columna} en Supabase:`, error.message)
+    return { evento: null, respondio: false }
+  }
+  return { evento: data ? mapearEventoDesdeDb(data) : null, respondio: true }
+}
+
+/**
  * Capa de abstracción de datos (Patrón Repositorio).
- * Funciona de manera híbrida: persistencia local inmediata, caché en memoria de servidor
- * y sincronización bidireccional con Supabase PostgreSQL.
+ * La base de datos (Supabase) es la fuente de verdad: las lecturas la consultan primero
+ * y todas las escrituras pasan por /api/eventos, que valida y persiste en el servidor.
+ * localStorage solo es una caché del dispositivo del anfitrión, nunca la fuente de verdad.
  */
 export const EventoRepositorio = {
   /**
-   * Obtener todos los eventos guardados en local
+   * Obtener todos los eventos en caché local del navegador
    */
   obtenerTodos(): DetalleEvento[] {
     if (typeof window === 'undefined') return []
@@ -114,7 +195,7 @@ export const EventoRepositorio = {
   },
 
   /**
-   * Obtener evento por token de administración secreto (Síncrono - Local)
+   * Obtener evento por token desde la caché local (sin red). Solo como respaldo.
    */
   obtenerPorTokenAdmin(tokenAdmin: string): DetalleEvento | null {
     const eventos = this.obtenerTodos()
@@ -122,49 +203,41 @@ export const EventoRepositorio = {
   },
 
   /**
-   * Obtener evento por token de administración secreto (Asíncrono - Supabase / Servidor / Local)
+   * Obtener evento por token de administración: base de datos primero, caché como respaldo.
    */
   async obtenerPorTokenAdminAsync(tokenAdmin: string): Promise<DetalleEvento | null> {
-    const enMemoria = ServidorAlmacen.obtenerEventoPorToken(tokenAdmin)
-    if (enMemoria) return enMemoria
+    if (typeof window === 'undefined') {
+      try {
+        const { evento: desdeDb, respondio } = await consultarSupabase('token_admin', tokenAdmin)
+        if (desdeDb) {
+          ServidorAlmacen.guardarEvento(desdeDb)
+          return desdeDb
+        }
+        if (respondio) return null
+      } catch (e) {
+        console.warn('Error consultando evento por token:', e)
+      }
+      return ServidorAlmacen.obtenerEventoPorToken(tokenAdmin)
+    }
 
     try {
-      const supabase = obtenerClienteSupabase()
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('eventos')
-          .select('*')
-          .eq('token_admin', tokenAdmin)
-          .maybeSingle()
-        if (data && !error) {
-          const eventoMapeado = mapearEventoDesdeDb(data)
-          ServidorAlmacen.guardarEvento(eventoMapeado)
-          return eventoMapeado
+      const res = await fetch(`/api/eventos?token=${encodeURIComponent(tokenAdmin)}`, { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        if (data?.evento) {
+          guardarCacheLocal(data.evento)
+          return data.evento
         }
       }
-    } catch (e) {
-      console.warn('Error consultando evento por token en Supabase:', e)
-    }
+      if (res.status === 404) return null
+    } catch {}
 
-    // Intentar consultar API del servidor si estamos en el navegador
-    if (typeof window !== 'undefined') {
-      try {
-        const res = await fetch(`/api/eventos?token=${encodeURIComponent(tokenAdmin)}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data?.evento) {
-            ServidorAlmacen.guardarEvento(data.evento)
-            return data.evento
-          }
-        }
-      } catch {}
-    }
-
+    // Sin conexión con el servidor: usar la última copia conocida del dispositivo
     return this.obtenerPorTokenAdmin(tokenAdmin)
   },
 
   /**
-   * Obtener evento por slug público (Síncrono - Local)
+   * Obtener evento por slug desde la caché local (sin red). Solo como respaldo.
    */
   obtenerPorSlug(slugPublico: string): DetalleEvento | null {
     const eventos = this.obtenerTodos()
@@ -172,197 +245,84 @@ export const EventoRepositorio = {
   },
 
   /**
-   * Obtener evento por slug público (Asíncrono - Supabase / Servidor / Local)
+   * Obtener evento por slug público: base de datos primero, caché como respaldo.
+   * En el servidor se usa para el SSR de /i/[slug].
    */
   async obtenerPorSlugAsync(slugPublico: string): Promise<DetalleEvento | null> {
-    const enMemoria = ServidorAlmacen.obtenerEventoPorSlug(slugPublico)
-    if (enMemoria) return enMemoria
+    if (typeof window === 'undefined') {
+      try {
+        const { evento: desdeDb, respondio } = await consultarSupabase('slug_publico', slugPublico)
+        if (desdeDb) {
+          ServidorAlmacen.guardarEvento(desdeDb)
+          return desdeDb
+        }
+        if (respondio) return null
+      } catch (e) {
+        console.warn('Error consultando evento por slug:', e)
+      }
+      return ServidorAlmacen.obtenerEventoPorSlug(slugPublico)
+    }
 
     try {
-      const supabase = obtenerClienteSupabase()
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('eventos')
-          .select('*')
-          .eq('slug_publico', slugPublico)
-          .maybeSingle()
-        if (data && !error) {
-          const eventoMapeado = mapearEventoDesdeDb(data)
-          ServidorAlmacen.guardarEvento(eventoMapeado)
-          return eventoMapeado
-        }
+      const res = await fetch(`/api/eventos?slug=${encodeURIComponent(slugPublico)}`, { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        if (data?.evento) return data.evento
       }
-    } catch (e) {
-      console.warn('Error consultando evento por slug en Supabase:', e)
-    }
+    } catch {}
 
-    // Intentar consultar API del servidor si estamos en el navegador
-    if (typeof window !== 'undefined') {
-      try {
-        const res = await fetch(`/api/eventos?slug=${encodeURIComponent(slugPublico)}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data?.evento) {
-            ServidorAlmacen.guardarEvento(data.evento)
-            return data.evento
-          }
-        }
-      } catch {}
-    }
-
-    return this.obtenerPorSlug(slugPublico)
+    return null
   },
 
   /**
-   * Guardar o actualizar un evento síncronamente (con sincronización en segundo plano)
+   * Guardar un evento sin esperar la respuesta (sincronización en segundo plano).
    */
   guardar(evento: DetalleEvento): DetalleEvento {
-    // 1. Guardar en memoria de servidor para disponibilidad inmediata
-    ServidorAlmacen.guardarEvento(evento)
-
-    // 2. Guardar en navegador protegiendo contra límite de cuota (QuotaExceededError)
-    if (typeof window !== 'undefined') {
-      try {
-        const eventos = this.obtenerTodos().filter((e) => e.id !== evento.id)
-        eventos.push(evento)
-        localStorage.setItem(LOCAL_STORAGE_KEY_EVENTOS, JSON.stringify(eventos))
-      } catch (e) {
-        console.warn('Advertencia guardando en localStorage:', e)
-      }
-
-      // Sincronización en segundo plano con la API del servidor
-      fetch('/api/eventos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(evento),
-      }).catch((e) => console.warn('Aviso sincronizando con /api/eventos:', e))
-    }
-
-    // 3. Sincronización directa con base de datos Supabase PostgreSQL
-    try {
+    if (typeof window === 'undefined') {
+      ServidorAlmacen.guardarEvento(evento)
       const supabase = obtenerClienteSupabase()
-      if (supabase) {
-        supabase
-          .from('eventos')
-          .upsert({
-            id: evento.id,
-            token_admin: evento.tokenAdmin,
-            slug_publico: evento.slugPublico,
-            tipo_evento: evento.tipoEvento,
-            titulo: evento.titulo,
-            subtitulo: evento.subtitulo || null,
-            anfitriones: evento.anfitriones,
-            fecha_evento: evento.fechaEvento,
-            hora_evento: evento.horaEvento || '',
-            direccion: evento.direccion,
-            enlace_mapa: evento.enlaceMapa || '',
-            codigo_vestimenta: evento.codigoVestimenta || null,
-            paleta_vestimenta: evento.paletaVestimenta || [],
-            datos_bancarios: evento.datosBancarios || {},
-            whatsapp_numero: evento.whatsappNumero,
-            whatsapp_plantilla: evento.whatsappPlantilla,
-            fotos_galeria: evento.fotosGaleria || [],
-            imagen_portada: evento.imagenPortada || null,
-            imagen_retrato: evento.imagenRetrato || null,
-            es_premium: Boolean(evento.esPremium),
-            configuracion_visual: {
-              ...(evento.configuracionVisual || {}),
-              limiteGratisInvitados:
-                evento.limiteGratisInvitados ||
-                (evento.configuracionVisual as any)?.limiteGratisInvitados ||
-                50,
-            },
-            secciones: evento.secciones || [],
-            expira_en: evento.expiraEn,
-          })
-          .then(({ error }) => {
-            if (error) console.error('Error sincronizando evento con Supabase:', error)
-          })
-      }
-    } catch (err) {
-      console.error('Error en conexión Supabase:', err)
+      supabase
+        ?.from('eventos')
+        .upsert(mapearEventoAFila(evento))
+        .then(({ error }) => {
+          if (error) console.error('Error sincronizando evento con Supabase:', error.message)
+        })
+      return evento
     }
+
+    guardarCacheLocal(evento)
+    fetch('/api/eventos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(evento),
+    }).catch((e) => console.warn('Aviso sincronizando con /api/eventos:', e))
 
     return evento
   },
 
   /**
-   * Guardar o actualizar un evento de manera ASÍNCRONA.
-   * Espera la confirmación del servidor para garantizar que la invitación exista
-   * en la nube antes de que el usuario comparta el enlace o lo abra en el celular.
+   * Guardar un evento esperando la confirmación de la base de datos.
+   * Lanza un error si el servidor no pudo persistirlo, para que la interfaz lo informe.
    */
   async guardarAsync(evento: DetalleEvento): Promise<DetalleEvento> {
-    // 1. Guardar en memoria y disco de servidor de inmediato
-    ServidorAlmacen.guardarEvento(evento)
-
-    // 2. Guardar en navegador protegiendo contra cuota
-    if (typeof window !== 'undefined') {
-      try {
-        const eventos = this.obtenerTodos().filter((e) => e.id !== evento.id)
-        eventos.push(evento)
-        localStorage.setItem(LOCAL_STORAGE_KEY_EVENTOS, JSON.stringify(eventos))
-      } catch (e) {
-        console.warn('Advertencia guardando en localStorage:', e)
-      }
-
-      // 3. Esperar confirmación de persistencia de la API del servidor (disco + Supabase)
-      try {
-        const respuesta = await fetch('/api/eventos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(evento),
-        })
-        if (!respuesta.ok) {
-          console.warn('La API de eventos respondió con estado no exitoso:', respuesta.status)
-        } else {
-          const resultado = await respuesta.json()
-          console.log('[Evento persistido exitosamente]', resultado)
-        }
-      } catch (err) {
-        console.error('Error esperando persistencia en /api/eventos:', err)
-      }
+    if (typeof window === 'undefined') {
+      this.guardar(evento)
+      return evento
     }
 
-    // 4. Sincronización directa con Supabase si está disponible en cliente
-    try {
-      const supabase = obtenerClienteSupabase()
-      if (supabase) {
-        supabase
-          .from('eventos')
-          .upsert({
-            id: evento.id,
-            token_admin: evento.tokenAdmin,
-            slug_publico: evento.slugPublico,
-            tipo_evento: evento.tipoEvento,
-            titulo: evento.titulo,
-            subtitulo: evento.subtitulo || null,
-            anfitriones: evento.anfitriones,
-            fecha_evento: evento.fechaEvento,
-            hora_evento: evento.horaEvento || '',
-            direccion: evento.direccion,
-            enlace_mapa: evento.enlaceMapa || '',
-            codigo_vestimenta: evento.codigoVestimenta || null,
-            paleta_vestimenta: evento.paletaVestimenta || [],
-            datos_bancarios: evento.datosBancarios || {},
-            whatsapp_numero: evento.whatsappNumero,
-            whatsapp_plantilla: evento.whatsappPlantilla,
-            fotos_galeria: evento.fotosGaleria || [],
-            imagen_portada: evento.imagenPortada || null,
-            imagen_retrato: evento.imagenRetrato || null,
-            es_premium: Boolean(evento.esPremium),
-            configuracion_visual: evento.configuracionVisual || {},
-            secciones: evento.secciones || [],
-            expira_en: evento.expiraEn,
-          })
-          .then(({ error }) => {
-            if (error) console.error('Error sincronizando evento con Supabase:', error.message)
-          })
-      }
-    } catch (err) {
-      console.error('Error en conexión Supabase:', err)
+    const respuesta = await fetch('/api/eventos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(evento),
+    })
+    const resultado = await respuesta.json().catch(() => null)
+    if (!respuesta.ok || !resultado?.ok) {
+      throw new Error(resultado?.error || `No se pudo guardar la invitación (HTTP ${respuesta.status})`)
     }
 
-    return evento
+    const eventoPersistido: DetalleEvento = resultado.evento || evento
+    guardarCacheLocal(eventoPersistido)
+    return eventoPersistido
   },
 
   /**
@@ -513,26 +473,7 @@ export const InvitadoRepositorio = {
       }).catch((e) => console.warn('Aviso sincronizando con /api/invitados:', e))
     }
 
-    // 3. Sincronizar con Supabase si está disponible
-    try {
-      const supabase = obtenerClienteSupabase()
-      if (supabase) {
-        supabase
-          .from('invitados')
-          .insert({
-            id: nuevoInvitado.id,
-            evento_id: nuevoInvitado.eventoId,
-            nombre: nuevoInvitado.nombre,
-            pases: nuevoInvitado.pases,
-            es_plural: nuevoInvitado.esPlural,
-            telefono: nuevoInvitado.telefono,
-            codigo_acceso: nuevoInvitado.codigoAcceso,
-            confirmado: false,
-          })
-          .then()
-      }
-    } catch {}
-
+    // La persistencia en la base de datos la hace /api/invitados (servidor)
     return { exito: true, invitado: nuevoInvitado }
   },
 
@@ -569,7 +510,8 @@ export const InvitadoRepositorio = {
       estadoConfirmacion: 'confirmado' | 'no_asiste'
       cuposConfirmados?: number
       mensajeConfirmacion?: string
-    }
+    },
+    opciones: { enviarAlServidor?: boolean } = {}
   ): { exito: boolean; invitado?: Invitado } {
     const todos = this.obtenerTodos()
     let index = -1
@@ -658,26 +600,28 @@ export const InvitadoRepositorio = {
       )
     }
 
-    // 3. Sincronizar con Supabase si está disponible
-    try {
-      const supabase = obtenerClienteSupabase()
-      if (supabase && invitadoActualizado.eventoId && invitadoActualizado.eventoId !== 'demo') {
-        supabase
-          .from('invitados')
-          .upsert({
-            id: invitadoActualizado.id,
-            evento_id: invitadoActualizado.eventoId,
-            nombre: invitadoActualizado.nombre,
-            pases: invitadoActualizado.pases,
-            es_plural: invitadoActualizado.esPlural,
-            telefono: invitadoActualizado.telefono,
-            codigo_acceso: invitadoActualizado.codigoAcceso,
-            confirmado: invitadoActualizado.confirmado,
-            fecha_confirmacion: invitadoActualizado.fechaConfirmacion,
-          })
-          .then()
-      }
-    } catch {}
+    // 3. Persistir en la base de datos a través del servidor, que solo actualiza la respuesta
+    //    (estado, cupos, mensaje) y nunca modifica los pases asignados por el anfitrión.
+    if (
+      opciones.enviarAlServidor !== false &&
+      typeof window !== 'undefined' &&
+      invitadoActualizado.eventoId &&
+      invitadoActualizado.eventoId !== 'demo'
+    ) {
+      fetch('/api/invitados/confirmar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventoId: invitadoActualizado.eventoId,
+          id: invitadoActualizado.id,
+          codigoAcceso: invitadoActualizado.codigoAcceso,
+          nombre: invitadoActualizado.nombre,
+          estadoConfirmacion: datos.estadoConfirmacion,
+          cuposConfirmados: invitadoActualizado.cuposConfirmados,
+          mensajeConfirmacion: invitadoActualizado.mensajeConfirmacion,
+        }),
+      }).catch((e) => console.warn('Aviso sincronizando confirmación:', e))
+    }
 
     return { exito: true, invitado: invitadoActualizado }
   },

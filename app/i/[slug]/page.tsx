@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { EventoRepositorio } from '@/lib/storage'
+import { EventoRepositorio, limpiarEventoPublico } from '@/lib/storage'
 import { PaginaInvitacionCliente } from '@/components/invitation/pagina-invitacion-cliente'
 
 interface Props {
@@ -56,8 +56,9 @@ export default async function PaginaInvitacion({ params, searchParams }: Props) 
   const nombreDecodificado = nombreInvitado ? decodeURIComponent(nombreInvitado) : null
   const esPlural = esPluralParam === '1'
 
-  // Recuperar evento asíncronamente desde Supabase o memoria del servidor
-  const evento = await EventoRepositorio.obtenerPorSlugAsync(slug)
+  // Recuperar desde la base de datos (fuente de verdad) y nunca exponer el token de administración
+  const eventoDb = await EventoRepositorio.obtenerPorSlugAsync(slug)
+  const evento = eventoDb ? limpiarEventoPublico(eventoDb) : null
 
   // Marcado estructurado JSON-LD Schema.org para SEO
   const jsonLd = evento
