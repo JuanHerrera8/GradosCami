@@ -34,11 +34,13 @@ export function familiaFuente(fuente?: FuenteTipografica): string | undefined {
   return CATALOGO_FUENTES.find((f) => f.id === fuente)?.familia
 }
 
-const SOMBRAS_TEXTO: Record<NonNullable<EstiloTexto['sombra']>, string | undefined> = {
-  ninguna: undefined,
-  suave: '0 1px 3px rgba(0,0,0,0.25)',
-  marcada: '0 2px 6px rgba(0,0,0,0.55)',
-  brillo: '0 0 12px rgba(255,255,255,0.85), 0 0 2px rgba(255,255,255,0.9)',
+/** Sombra de cada intensidad; `color` reemplaza el color por defecto (negro o blanco en el brillo) */
+const SOMBRAS_TEXTO: Record<NonNullable<EstiloTexto['sombra']>, (color?: string) => string | undefined> = {
+  ninguna: () => undefined,
+  suave: (c) => `0 1px 3px ${c ? `color-mix(in srgb, ${c} 45%, transparent)` : 'rgba(0,0,0,0.25)'}`,
+  marcada: (c) => `0 2px 6px ${c ? `color-mix(in srgb, ${c} 80%, transparent)` : 'rgba(0,0,0,0.55)'}`,
+  solida: (c) => `0.06em 0.06em 0 ${c || 'rgba(0,0,0,0.35)'}`,
+  brillo: (c) => `0 0 12px ${c || 'rgba(255,255,255,0.85)'}, 0 0 2px ${c || 'rgba(255,255,255,0.9)'}`,
 }
 
 /**
@@ -68,9 +70,15 @@ export function estiloTextoACss(
   }
   if (estilo.interletrado !== undefined) css.letterSpacing = `${estilo.interletrado}em`
   if (estilo.interlineado) css.lineHeight = estilo.interlineado
-  if (estilo.sombra) css.textShadow = SOMBRAS_TEXTO[estilo.sombra]
-  if (estilo.colorFondo) {
-    css.backgroundColor = estilo.colorFondo
+  if (estilo.sombra) css.textShadow = SOMBRAS_TEXTO[estilo.sombra]?.(estilo.sombraColor)
+  if (estilo.contornoColor && estilo.contornoGrosor) {
+    // El trazo se pinta detrás del relleno: la letra no se adelgaza, el borde crece hacia afuera
+    css.WebkitTextStroke = `${estilo.contornoGrosor * 2}px ${estilo.contornoColor}`
+    css.paintOrder = 'stroke fill'
+  }
+  if (estilo.colorFondo || (estilo.marcoColor && estilo.marcoGrosor)) {
+    if (estilo.colorFondo) css.backgroundColor = estilo.colorFondo
+    if (estilo.marcoColor && estilo.marcoGrosor) css.border = `${estilo.marcoGrosor}px solid ${estilo.marcoColor}`
     css.padding = '0.1em 0.35em'
     css.borderRadius = '0.25em'
     css.boxDecorationBreak = 'clone'

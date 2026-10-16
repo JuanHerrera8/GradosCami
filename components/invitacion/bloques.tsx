@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import type { SeccionModular } from '@/types/invitation'
 import { useInvitacion, fechaLarga, enlaceGoogleCalendar, enlacesMapa } from './contexto'
-import { Boton, Caja, Etiqueta, MarcoBloque, Texto, icono, useCuentaRegresiva } from './piezas'
+import { Boton, Caja, Etiqueta, FotoQuitable, MarcoBloque, Texto, icono, useCuentaRegresiva } from './piezas'
 import { OrnamentoArriba } from './ornamentos'
 
 export interface PropsBloque {
@@ -23,11 +23,18 @@ const textoSuave: React.CSSProperties = { fontSize: 14, color: 'var(--inv-tinta-
 
 // ─────────── Portada ───────────
 export function BloquePortada({ seccion }: PropsBloque) {
-  const { evento, tema, editable } = useInvitacion()
+  const { evento, tema, editable, edicion } = useInvitacion()
   const datos = seccion.datos || {}
   const variante = seccion.estilo?.variante || (datos.imagenPortada ? 'arco' : 'sin_foto')
   const foto = datos.imagenPortada
   const nombres = seccion.titulo || evento.anfitriones
+  const completa = variante === 'completa'
+
+  // Quitar la foto deja la portada sin foto (y sin espacio reservado)
+  const quitarFoto = () => {
+    edicion?.alDato(seccion.id, 'imagenPortada', undefined)
+    edicion?.alCampo(seccion.id, 'estilo', { ...(seccion.estilo || {}), variante: 'sin_foto' })
+  }
 
   const imagen = foto ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -37,8 +44,8 @@ export function BloquePortada({ seccion }: PropsBloque) {
       style={
         variante === 'circulo'
           ? { width: 180, height: 180, objectFit: 'cover', borderRadius: '50%' }
-          : variante === 'completa'
-          ? { width: 'calc(100% + 40px)', margin: '-22px -20px 6px', height: 280, objectFit: 'cover', borderRadius: 'var(--inv-radio) var(--inv-radio) 0 0' }
+          : completa
+          ? { width: '100%', height: 280, objectFit: 'cover', borderRadius: 'var(--inv-radio) var(--inv-radio) 0 0' }
           : { width: 220, height: 260, objectFit: 'cover', borderRadius: '110px 110px 16px 16px' }
       }
     />
@@ -63,7 +70,15 @@ export function BloquePortada({ seccion }: PropsBloque) {
 
   return (
     <MarcoBloque seccion={seccion} ornamentoPorDefecto relleno="26px 20px 30px">
-      {variante !== 'sin_foto' && imagen}
+      {variante !== 'sin_foto' && imagen && (
+        <FotoQuitable
+          alQuitar={quitarFoto}
+          etiqueta={foto ? 'Quitar foto' : 'Sin foto'}
+          estilo={completa ? { width: 'calc(100% + 40px)', margin: '-22px -20px 6px' } : undefined}
+        >
+          {imagen}
+        </FotoQuitable>
+      )}
       <Texto
         seccion={seccion}
         campo="subtitulo"
@@ -308,15 +323,17 @@ export function BloqueRegalosBancarios({ seccion }: PropsBloque) {
 
 // ─────────── Historia ───────────
 export function BloqueHistoria({ seccion }: PropsBloque) {
-  const { editable } = useInvitacion()
+  const { editable, edicion } = useInvitacion()
   const datos = seccion.datos || {}
   if (!editable && !datos.cuerpoTexto && !datos.urlImagen) return null
   return (
     <MarcoBloque seccion={seccion}>
       <Etiqueta seccion={seccion} />
       {datos.urlImagen && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={datos.urlImagen} alt="" style={{ width: '100%', maxHeight: 280, objectFit: 'cover', borderRadius: 'calc(var(--inv-radio) * 0.7)' }} />
+        <FotoQuitable alQuitar={() => edicion?.alDato(seccion.id, 'urlImagen', undefined)} estilo={{ width: '100%' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={datos.urlImagen} alt="" style={{ width: '100%', maxHeight: 280, objectFit: 'cover', borderRadius: 'calc(var(--inv-radio) * 0.7)' }} />
+        </FotoQuitable>
       )}
       <Texto
         seccion={seccion}

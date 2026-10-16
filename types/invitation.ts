@@ -258,6 +258,10 @@ export interface SeccionModular {
     opcionesJuego?: OpcionJuego[]
     // Texto del botón de confirmación y fecha límite
     fechaLimiteRsvp?: string
+    // Pregunta de comida en la confirmación (vegano, sin gluten...): se puede cambiar o quitar
+    preguntarComida?: boolean // Por defecto se pregunta
+    preguntaComida?: string
+    opcionesComida?: OpcionRsvp[]
     // Separador Ornamental
     estiloSeparador?:
       | 'linea_dorada'
@@ -289,6 +293,11 @@ export interface RegaloReservable {
   nombre: string
   enlace?: string
   reservadoPor?: string
+}
+
+export interface OpcionRsvp {
+  id: string
+  texto: string
 }
 
 export interface OpcionJuego {
@@ -331,7 +340,7 @@ export type FormaTarjeta = 'clasica' | 'arco' | 'doble_borde' | 'biselada'
 
 export interface MusicaFondoConfig {
   activa: boolean
-  url: string
+  url: string // MP3 subido o enlazado, o enlace de YouTube / Spotify
   titulo?: string
   autoReproducir?: boolean
 }
@@ -481,8 +490,13 @@ export interface EstiloTexto {
   alineacion?: 'izquierda' | 'centro' | 'derecha'
   interletrado?: number // em
   interlineado?: number // múltiplo
-  sombra?: 'ninguna' | 'suave' | 'marcada' | 'brillo'
+  sombra?: 'ninguna' | 'suave' | 'marcada' | 'solida' | 'brillo'
+  sombraColor?: string // si existe, la sombra usa este color con la intensidad elegida
+  contornoColor?: string // borde alrededor de cada letra
+  contornoGrosor?: number // px
   colorFondo?: string // resaltado detrás del texto
+  marcoColor?: string // recuadro alrededor del texto
+  marcoGrosor?: number // px
 }
 
 export type TipoElementoLienzo = 'texto' | 'imagen' | 'sticker' | 'icono' | 'forma'

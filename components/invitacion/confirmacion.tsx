@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import type { DetalleEvento, ExperienciaInvitado, Invitado } from '@/types/invitation'
+import type { DetalleEvento, ExperienciaInvitado, Invitado, OpcionRsvp } from '@/types/invitation'
 import { construirUrlWhatsApp } from '@/lib/event-utils'
 import { infoEvento } from '@/lib/estudio/eventos'
 import { enlaceGoogleCalendar, esInvitadoReal, fechaLarga } from './contexto'
@@ -12,12 +12,22 @@ export interface RespuestaInvitado {
   cupos: number
 }
 
-const DIETAS = [
-  { id: 'vegetariano', nombre: 'Vegetariano' },
-  { id: 'vegano', nombre: 'Vegano' },
-  { id: 'sin_gluten', nombre: 'Sin gluten' },
-  { id: 'infantil', nombre: 'Menú infantil' },
+export const PREGUNTA_COMIDA_POR_DEFECTO = '¿Alguna restricción en la comida?'
+export const OPCIONES_COMIDA_POR_DEFECTO: OpcionRsvp[] = [
+  { id: 'vegetariano', texto: 'Vegetariano' },
+  { id: 'vegano', texto: 'Vegano' },
+  { id: 'sin_gluten', texto: 'Sin gluten' },
+  { id: 'infantil', texto: 'Menú infantil' },
 ]
+
+/** Pregunta de comida tal como la configuró el anfitrión en el bloque de confirmación (null = no se pregunta) */
+export function preguntaComidaDe(evento: DetalleEvento): { pregunta: string; opciones: OpcionRsvp[] } | null {
+  const datos = evento.secciones?.find((s) => s.tipo === 'confirmacion_rsvp')?.datos
+  if (datos?.preguntarComida === false) return null
+  const opciones = (datos?.opcionesComida ?? OPCIONES_COMIDA_POR_DEFECTO).filter((o) => o.texto.trim())
+  if (!opciones.length) return null
+  return { pregunta: datos?.preguntaComida?.trim() || PREGUNTA_COMIDA_POR_DEFECTO, opciones }
+}
 
 export function claveRespuesta(eventoId: string, invitado: Invitado | null) {
   return `tarjeton_rsvp_${eventoId}_${invitado?.codigoAcceso || 'anon'}`
@@ -93,6 +103,7 @@ export function ConfirmacionAsistencia({
   respuestaPrevia,
 }: ConfirmacionAsistenciaProps) {
   const info = infoEvento(evento.tipoEvento)
+  const comida = preguntaComidaDe(evento)
   const real = esInvitadoReal(invitado)
   const maximo = real ? Math.max(1, invitado.pases || 1) : 10
   const [paso, setPaso] = useState<Paso>('pregunta')
@@ -136,7 +147,8 @@ export function ConfirmacionAsistencia({
     }
     setEnviando(true)
     setError(null)
-    const textoDietas = dietas.length ? `Restricciones: ${dietas.map((d) => DIETAS.find((x) => x.id === d)?.nombre).join(', ')}. ` : ''
+    const elegidas = comida && estado === 'confirmado' ? comida.opciones.filter((o) => dietas.includes(o.id)) : []
+    const textoDietas = elegidas.length ? `${comida!.pregunta} ${elegidas.map((o) => o.texto).join(', ')}. ` : ''
     const respuesta: RespuestaInvitado = { estado, cupos: estado === 'confirmado' ? cupos : 0 }
 
     if (!simulada) {
@@ -315,22 +327,24 @@ export function ConfirmacionAsistencia({
                     </div>
                   </div>
                 )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700 }}>¿Alguna restricción en la comida?</span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    <button type="button" aria-pressed={dietas.length === 0} onClick={() => setDietas([])} style={chip(dietas.length === 0)}>
-                      Ninguna
-                    </button>
-                    {DIETAS.map((d) => {
-                      const activa = dietas.includes(d.id)
-                      return (
-                        <button key={d.id} type="button" aria-pressed={activa} onClick={() => setDietas(activa ? dietas.filter((x) => x !== d.id) : [...dietas, d.id])} style={chip(activa)}>
-                          {d.nombre}
-                        </button>
-                      )
-                    })}
+                {comida && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{comida.pregunta}</span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      <button type="button" aria-pressed={dietas.length === 0} onClick={() => setDietas([])} style={chip(dietas.length === 0)}>
+                        Ninguna
+                      </button>
+                      {comida.opciones.map((d) => {
+                        const activa = dietas.includes(d.id)
+                        return (
+                          <button key={d.id} type="button" aria-pressed={activa} onClick={() => setDietas(activa ? dietas.filter((x) => x !== d.id) : [...dietas, d.id])} style={chip(activa)}>
+                            {d.texto}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14, fontWeight: 700 }}>
                   Un mensaje para {anfitriones} (opcional)
                   <textarea rows={2} value={mensaje} onChange={(e) => setMensaje(e.target.value)} maxLength={300} style={campo} />

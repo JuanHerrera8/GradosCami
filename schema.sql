@@ -167,3 +167,19 @@ CREATE POLICY "tarjeton_media_lectura_publica" ON storage.objects
 DROP POLICY IF EXISTS "tarjeton_media_subida" ON storage.objects;
 CREATE POLICY "tarjeton_media_subida" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'tarjeton-media');
+
+-- 8. CANCIÓN DE FONDO SUBIDA POR EL ANFITRIÓN (Supabase Storage)
+-- /api/audio valida al anfitrión y entrega una URL firmada; el navegador sube el archivo
+-- directo a este bucket (hasta 15 MB) y en el evento queda solo la URL pública.
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('tarjeton-audio', 'tarjeton-audio', true, 15728640, ARRAY['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg', 'audio/webm', 'audio/wav', 'audio/x-wav'])
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "tarjeton_audio_lectura_publica" ON storage.objects;
+CREATE POLICY "tarjeton_audio_lectura_publica" ON storage.objects
+  FOR SELECT USING (bucket_id = 'tarjeton-audio');
+
+-- Necesaria solo si el servidor no tiene SUPABASE_SERVICE_ROLE_KEY (la URL firmada se crea con la llave pública)
+DROP POLICY IF EXISTS "tarjeton_audio_subida" ON storage.objects;
+CREATE POLICY "tarjeton_audio_subida" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'tarjeton-audio');

@@ -162,6 +162,42 @@ export function Texto({
   )
 }
 
+/**
+ * Foto opcional de un bloque. En el editor muestra encima un botón para quitarla,
+ * así nunca queda una foto (o su espacio vacío) fija en la invitación.
+ */
+export function FotoQuitable({
+  children,
+  alQuitar,
+  etiqueta = 'Quitar foto',
+  estilo,
+}: {
+  children: React.ReactNode
+  alQuitar: () => void
+  etiqueta?: string
+  estilo?: React.CSSProperties
+}) {
+  const { editable } = useInvitacion()
+  return (
+    <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', maxWidth: estilo?.width ? undefined : '100%', ...estilo }}>
+      {children}
+      {editable && <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          alQuitar()
+        }}
+        style={{ position: 'absolute', top: 8, right: 8, minHeight: 32, padding: '0 12px', borderRadius: 999, border: 0, backgroundColor: 'rgba(15,23,42,0.82)', color: '#fff', font: 'inherit', fontSize: 12, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+        {etiqueta}
+      </button>}
+    </div>
+  )
+}
+
 type VarianteBoton = 'solido' | 'borde' | 'suave'
 
 export function Boton({

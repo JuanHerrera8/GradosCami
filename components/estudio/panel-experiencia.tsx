@@ -1,9 +1,12 @@
 'use client'
 
-import React from 'react'
-import type { ConfiguracionVisual, ExperienciaInvitado, TipoApertura, TipoRecorrido } from '@/types/invitation'
+import React, { useState } from 'react'
+import { Loader2, Upload } from 'lucide-react'
+import type { ConfiguracionVisual, DetalleEvento, ExperienciaInvitado, MusicaFondoConfig, TipoApertura, TipoRecorrido } from '@/types/invitation'
 import { experienciaDe } from '@/lib/estudio/kits'
-import { Campo, Interruptor, TituloGrupo } from './ui'
+import { analizarMusica, problemaEnlaceMusica, TAMANO_MAXIMO_AUDIO, TIPOS_AUDIO_PERMITIDOS } from '@/lib/estudio/musica'
+import { obtenerClienteSupabase } from '@/lib/supabase'
+import { Campo, Interruptor, Segmentos, TituloGrupo } from './ui'
 
 const APERTURAS: { id: TipoApertura; nombre: string; descripcion: string }[] = [
   { id: 'sobre', nombre: 'Sobre con lacre', descripcion: 'Se abre al tocar el sello' },
@@ -28,11 +31,12 @@ export const PRESETS_MUSICA = [
 
 interface PanelExperienciaProps {
   visual: ConfiguracionVisual
+  evento: Pick<DetalleEvento, 'id' | 'tokenAdmin'>
   alCambiar: (visual: ConfiguracionVisual) => void
   alProbarApertura: () => void
 }
 
-export function PanelExperiencia({ visual, alCambiar, alProbarApertura }: PanelExperienciaProps) {
+export function PanelExperiencia({ visual, evento, alCambiar, alProbarApertura }: PanelExperienciaProps) {
   const exp = experienciaDe(visual)
   const setExp = (cambios: Partial<ExperienciaInvitado>) => alCambiar({ ...visual, experiencia: { ...exp, ...cambios }, animacionSobre: (cambios.apertura ?? exp.apertura) === 'sobre' })
   const musica = visual.musicaFondo || { activa: false, url: '', autoReproducir: true }
@@ -82,17 +86,138 @@ export function PanelExperiencia({ visual, alCambiar, alProbarApertura }: PanelE
         <Interruptor etiqueta="Confeti al confirmar" descripcion="Una pequeña celebración" activo={exp.confetiAlConfirmar} alCambiar={(v) => setExp({ confetiAlConfirmar: v })} />
         <Interruptor etiqueta="Agregar al calendario" descripcion="Botón para Google y Apple" activo={exp.botonCalendario} alCambiar={(v) => setExp({ botonCalendario: v })} />
         <Interruptor etiqueta="Música de fondo" descripcion="Suena después de abrir la invitación" activo={musica.activa} alCambiar={(v) => setMusica({ activa: v, url: musica.url || PRESETS_MUSICA[0].url, titulo: musica.titulo || PRESETS_MUSICA[0].nombre })} />
-        {musica.activa && (
-          <div className="flex flex-col gap-2 pl-1">
-            {PRESETS_MUSICA.map((p) => (
-              <button key={p.id} type="button" aria-pressed={musica.url === p.url} onClick={() => setMusica({ url: p.url, titulo: p.nombre })} className={`min-h-10 px-3 rounded-xl text-left text-[13px] font-semibold cursor-pointer ${musica.url === p.url ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700'}`}>
-                {p.nombre}
-              </button>
-            ))}
-            <Campo etiqueta="O pega el enlace de un MP3" tipo="url" valor={PRESETS_MUSICA.some((p) => p.url === musica.url) ? '' : musica.url} alCambiar={(v) => setMusica({ url: v, titulo: 'Nuestra canción' })} placeholder="https://…/cancion.mp3" />
-          </div>
-        )}
+        {musica.activa && <ElegirMusica musica={musica} setMusica={setMusica} evento={evento} />}
       </div>
+    </div>
+  )
+}
+
+type OrigenMusica = 'biblioteca' | 'archivo' | 'enlace'
+
+function origenDe(url: string): OrigenMusica {
+  if (!url || PRESETS_MUSICA.some((p) => p.url === url)) return 'biblioteca'
+  if (url.includes('/tarjeton-audio/')) return 'archivo'
+  return 'enlace'
+}
+
+/** Sube la canción directo a Supabase Storage con una URL firmada que entrega /api/audio */
+async function subirCancion(archivo: File, evento: Pick<DetalleEvento, 'id' | 'tokenAdmin'>): Promise<string> {
+  const res = await fetch('/api/audio', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ eventoId: evento.id, tokenAdmin: evento.tokenAdmin, tipo: archivo.type, tamano: archivo.size }),
+  })
+  const r = await res.json().catch(() => null)
+  if (!res.ok || !r?.token) throw new Error(r?.error || 'No se pudo subir la canción.')
+  const supabase = obtenerClienteSupabase()
+  if (!supabase) throw new Error('El almacenamiento no está disponible.')
+  const { error } = await supabase.storage.from(r.bucket).uploadToSignedUrl(r.ruta, r.token, archivo, { contentType: archivo.type })
+  if (error) throw new Error('No se pudo subir la canción. Revisa tu conexión e intenta de nuevo.')
+  return r.url as string
+}
+
+function ElegirMusica({
+  musica,
+  setMusica,
+  evento,
+}: {
+  musica: MusicaFondoConfig
+  setMusica: (cambios: Partial<MusicaFondoConfig>) => void
+  evento: Pick<DetalleEvento, 'id' | 'tokenAdmin'>
+}) {
+  const [origen, setOrigen] = useState<OrigenMusica>(() => origenDe(musica.url))
+  const [enlace, setEnlace] = useState(() => (origenDe(musica.url) === 'enlace' ? musica.url : ''))
+  const [subiendo, setSubiendo] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const fuente = analizarMusica(musica.url)
+  const problema = problemaEnlaceMusica(enlace)
+
+  const elegirArchivo = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'audio/*,.mp3,.m4a'
+    input.onchange = async () => {
+      const archivo = input.files?.[0]
+      if (!archivo) return
+      if (!TIPOS_AUDIO_PERMITIDOS[archivo.type]) return setError('Ese archivo no es una canción compatible. Usa MP3, M4A, OGG o WAV.')
+      if (archivo.size > TAMANO_MAXIMO_AUDIO) return setError('La canción pesa más de 15 MB. Prueba con un MP3 más liviano o usa un enlace de YouTube.')
+      setSubiendo(true)
+      setError(null)
+      try {
+        const url = await subirCancion(archivo, evento)
+        setMusica({ url, titulo: archivo.name.replace(/\.[^.]+$/, '').slice(0, 60) })
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'No se pudo subir la canción.')
+      } finally {
+        setSubiendo(false)
+      }
+    }
+    input.click()
+  }
+
+  return (
+    <div className="flex flex-col gap-3 pl-1">
+      <Segmentos<OrigenMusica>
+        opciones={[
+          { id: 'biblioteca', nombre: 'Biblioteca' },
+          { id: 'archivo', nombre: 'Subir canción' },
+          { id: 'enlace', nombre: 'YouTube o Spotify' },
+        ]}
+        valor={origen}
+        alCambiar={(o) => {
+          setOrigen(o)
+          setError(null)
+        }}
+      />
+
+      {origen === 'biblioteca' &&
+        PRESETS_MUSICA.map((p) => (
+          <button key={p.id} type="button" aria-pressed={musica.url === p.url} onClick={() => setMusica({ url: p.url, titulo: p.nombre })} className={`min-h-10 px-3 rounded-xl text-left text-[13px] font-semibold cursor-pointer ${musica.url === p.url ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-700'}`}>
+            {p.nombre}
+          </button>
+        ))}
+
+      {origen === 'archivo' && (
+        <div className="flex flex-col gap-2">
+          <button type="button" onClick={elegirArchivo} disabled={subiendo} className="min-h-11 rounded-xl bg-slate-900 text-white text-[14px] font-bold flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">
+            {subiendo ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            {subiendo ? 'Subiendo canción…' : origenDe(musica.url) === 'archivo' ? 'Cambiar canción' : 'Subir mi canción'}
+          </button>
+          <span className="text-[12px] text-slate-500">MP3, M4A, OGG o WAV de hasta 15 MB.</span>
+          {origenDe(musica.url) === 'archivo' && <audio controls preload="none" src={musica.url} className="w-full h-10" />}
+        </div>
+      )}
+
+      {origen === 'enlace' && (
+        <div className="flex flex-col gap-2">
+          <Campo
+            etiqueta="Enlace de la canción"
+            tipo="url"
+            valor={enlace}
+            alCambiar={(v) => {
+              setEnlace(v)
+              if (!problemaEnlaceMusica(v) && v.trim()) setMusica({ url: v.trim(), titulo: musica.titulo && origenDe(musica.url) === 'enlace' ? musica.titulo : 'Nuestra canción' })
+            }}
+            placeholder="https://youtu.be/… o https://open.spotify.com/track/…"
+          />
+          {problema ? (
+            <span className="text-[12px] text-rose-600">{problema}</span>
+          ) : fuente?.tipo === 'youtube' && origenDe(musica.url) === 'enlace' ? (
+            <span className="p-2.5 rounded-xl bg-emerald-50 text-[12px] leading-snug text-emerald-900">Video de YouTube listo: suena de fondo al abrir la invitación (solo el audio).</span>
+          ) : fuente?.tipo === 'spotify' && origenDe(musica.url) === 'enlace' ? (
+            <span className="p-2.5 rounded-xl bg-amber-50 text-[12px] leading-snug text-amber-900">
+              Spotify no deja que la música suene sola: tu invitado verá un pequeño reproductor de Spotify para darle play. Quien no tenga cuenta escucha una muestra de 30 segundos. Para que suene completa y sola, usa YouTube o sube la canción.
+            </span>
+          ) : (
+            <span className="text-[12px] text-slate-500">En YouTube o Spotify toca «Compartir» → «Copiar enlace» y pégalo aquí.</span>
+          )}
+        </div>
+      )}
+
+      {origen !== 'biblioteca' && origenDe(musica.url) === origen && (
+        <Campo etiqueta="Nombre que verán tus invitados" valor={musica.titulo} alCambiar={(v) => setMusica({ titulo: v })} placeholder="Nuestra canción" maximo={60} />
+      )}
+      {error && <span className="text-[12px] text-rose-600">{error}</span>}
     </div>
   )
 }

@@ -9,6 +9,7 @@ import type {
   EstiloSeccion,
   HotelHospedaje,
   OpcionJuego,
+  OpcionRsvp,
   PersonaDestacada,
   RegaloReservable,
   SeccionModular,
@@ -16,8 +17,9 @@ import type {
 import { CATALOGO_SECCIONES } from '@/lib/modular-defaults'
 import { CATALOGO_ANIMACIONES } from '@/lib/editor/estilos'
 import { MuestraOrnamento } from '@/components/invitacion/ornamentos'
+import { OPCIONES_COMIDA_POR_DEFECTO, PREGUNTA_COMIDA_POR_DEFECTO } from '@/components/invitacion/confirmacion'
 import type { TemaInvitacion } from '@/components/invitacion/tema'
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, ShieldCheck, Sparkles, Trash2, Type } from 'lucide-react'
 import {
   AreaTexto,
   Campo,
@@ -40,7 +42,11 @@ export interface ActualizadoresBloque {
   alternarVisible: (sId: string) => void
   eliminar: (sId: string) => void
   abrirElementosCollage: (sId: string) => void
+  /** Selecciona el título del bloque en la invitación y abre sus herramientas de letra, color, borde y sombra */
+  estilizarTitulo: (sId: string) => void
 }
+
+const SIN_TITULO_VISIBLE: SeccionModular['tipo'][] = ['imagen_libre', 'separador_ornamental', 'lienzo_libre']
 
 const VARIANTES: Partial<Record<SeccionModular['tipo'], { id: string; nombre: string }[]>> = {
   cabecera: [
@@ -148,22 +154,45 @@ function Contenido({ seccion, evento, act }: { seccion: SeccionModular; evento: 
   )
   const consejo = (
     <p className="m-0 p-3 rounded-xl bg-amber-50 text-[13px] leading-snug text-amber-900">
-      También puedes tocar cualquier texto en la invitación y escribir encima.
+      Toca cualquier texto en la invitación para escribir encima y cambiarle la letra, el color, el borde o la sombra.
     </p>
   )
 
   switch (seccion.tipo) {
-    case 'cabecera':
+    case 'cabecera': {
+      const conFoto = (seccion.estilo?.variante || (d.imagenPortada ? 'arco' : 'sin_foto')) !== 'sin_foto'
       return (
         <div className="flex flex-col gap-3.5">
           <Campo etiqueta="Frase de apertura" valor={seccion.subtitulo} alCambiar={(v) => act.alCampo(s, 'subtitulo', v)} placeholder="¡Nos casamos!" />
           <Campo etiqueta="Nombres" valor={seccion.titulo} alCambiar={(v) => act.alCampo(s, 'titulo', v)} />
           {fechaHora}
           <Campo etiqueta="Lugar" valor={evento.direccion} alCambiar={(v) => act.alEvento({ direccion: v })} />
-          <SubirFoto url={d.imagenPortada} alCambiar={(url) => act.alDato(s, 'imagenPortada', url)} carpeta={carpeta} etiqueta="Foto de portada" />
+          <div className="flex flex-col gap-3 p-3 rounded-xl border border-slate-200">
+            <Interruptor
+              etiqueta="Foto en la portada"
+              descripcion={conFoto ? 'Apágala si no quieres foto' : 'La portada queda solo con texto'}
+              activo={conFoto}
+              alCambiar={(v) => {
+                act.alEstilo(s, { variante: v ? 'arco' : 'sin_foto' })
+                if (!v) act.alDato(s, 'imagenPortada', undefined)
+              }}
+            />
+            {conFoto && (
+              <SubirFoto
+                url={d.imagenPortada}
+                alCambiar={(url) => {
+                  act.alDato(s, 'imagenPortada', url)
+                  if (!url) act.alEstilo(s, { variante: 'sin_foto' })
+                }}
+                carpeta={carpeta}
+                etiqueta="Foto de portada"
+              />
+            )}
+          </div>
           {consejo}
         </div>
       )
+    }
     case 'cuenta_regresiva':
     case 'fecha_hora':
       return (
@@ -434,6 +463,29 @@ function Contenido({ seccion, evento, act }: { seccion: SeccionModular; evento: 
           {evento.metodoConfirmacion !== 'tarjeton' && evento.metodoConfirmacion && (
             <Campo etiqueta="Tu WhatsApp (con indicativo)" tipo="tel" valor={evento.whatsappNumero} alCambiar={(v) => act.alEvento({ whatsappNumero: v.replace(/[^\d]/g, '') })} placeholder="573001234567" />
           )}
+          <div className="flex flex-col gap-3 p-3 rounded-xl border border-slate-200">
+            <Interruptor
+              etiqueta="Preguntar por la comida"
+              descripcion={d.preguntarComida === false ? 'Tus invitados no verán esta pregunta' : 'Vegano, sin gluten, menú infantil…'}
+              activo={d.preguntarComida !== false}
+              alCambiar={(v) => act.alDato(s, 'preguntarComida', v)}
+            />
+            {d.preguntarComida !== false && (
+              <>
+                <Campo etiqueta="Pregunta" valor={d.preguntaComida} alCambiar={dato('preguntaComida')} placeholder={PREGUNTA_COMIDA_POR_DEFECTO} maximo={70} />
+                <EditorLista<OpcionRsvp>
+                  etiqueta="Opciones que puede elegir"
+                  items={d.opcionesComida ?? OPCIONES_COMIDA_POR_DEFECTO}
+                  alCambiar={dato('opcionesComida')}
+                  crear={() => ({ id: idCorto('cm'), texto: '' })}
+                  textoAgregar="Agregar opción"
+                  maximo={10}
+                  render={(o, actualizar) => <Campo etiqueta="Opción" valor={o.texto} alCambiar={(v) => actualizar({ texto: v })} placeholder="Ej: Sin mariscos" maximo={30} />}
+                />
+                <p className="m-0 text-[12px] text-slate-500">Siempre aparece también «Ninguna». Lo que elijan llega con su respuesta en tu panel.</p>
+              </>
+            )}
+          </div>
           <p className="m-0 text-[12px] text-slate-500">Cada invitado ve su nombre y cuántos lugares tiene. Las respuestas llegan a tu panel de invitados.</p>
         </div>
       )
@@ -504,6 +556,15 @@ function Diseno({ seccion, evento, act }: { seccion: SeccionModular; evento: Det
   const s = seccion.id
   return (
     <div className="flex flex-col gap-5">
+      {!SIN_TITULO_VISIBLE.includes(seccion.tipo) && (
+        <div className="flex flex-col gap-2">
+          <TituloGrupo>Letra de los textos</TituloGrupo>
+          <p className="m-0 text-[13px] leading-snug text-slate-600">Cada texto puede tener su propia letra, tamaño, color, borde y sombra. Toca un texto en la invitación o empieza por el título.</p>
+          <button type="button" onClick={() => act.estilizarTitulo(s)} className="min-h-11 rounded-xl border border-slate-300 text-[14px] font-bold text-slate-900 flex items-center justify-center gap-2 cursor-pointer hover:bg-slate-50">
+            <Type size={16} /> Cambiar la letra del título
+          </button>
+        </div>
+      )}
       {variantes && (
         <div className="flex flex-col gap-2">
           <TituloGrupo>Distribución</TituloGrupo>

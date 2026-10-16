@@ -257,20 +257,40 @@ function controlesTexto({
       <Deslizador etiqueta="Entre líneas" valor={estilo?.interlineado ?? 1.3} min={0.8} max={2.6} paso={0.05} alCambiar={(v) => alCambiar({ interlineado: v })} />
     </PanelHerramienta>,
 
-    <PanelHerramienta key="efectos" id="efectos" etiqueta="Efectos" titulo="Efectos del texto" icono={<Sparkles size={TAMANO_ICONO} />} {...comunes}>
-      <p className="text-[11px] font-semibold text-slate-600 mb-1.5">Sombra</p>
+    <PanelHerramienta key="contorno" id="contorno" etiqueta="Borde" titulo="Borde de las letras" icono={<span className="text-[15px] font-black leading-none text-white [-webkit-text-stroke:1.5px_#334155] [paint-order:stroke_fill]">A</span>} {...comunes}>
+      <Deslizador etiqueta="Grosor del borde" valor={estilo?.contornoGrosor ?? 0} min={0} max={6} paso={0.5} unidad=" px" alCambiar={(v) => alCambiar({ contornoGrosor: v || undefined, contornoColor: v ? estilo?.contornoColor || '#FFFFFF' : estilo?.contornoColor })} />
+      <SelectorColor
+        valor={estilo?.contornoColor}
+        alCambiar={(c) => alCambiar(c ? { contornoColor: c, contornoGrosor: estilo?.contornoGrosor || 1.5 } : { contornoColor: undefined, contornoGrosor: undefined })}
+        coloresTema={coloresTema}
+        etiquetaQuitar="Sin borde"
+      />
+    </PanelHerramienta>,
+
+    <PanelHerramienta key="sombra" id="sombra" etiqueta="Sombra" titulo="Sombra del texto" icono={<span className="text-[15px] font-black leading-none [text-shadow:2px_2px_0_#cbd5e1]">S</span>} {...comunes}>
       <GrupoOpciones
-        columnas={4}
+        columnas={3}
         valor={estilo?.sombra ?? 'ninguna'}
         opciones={[
           { id: 'ninguna', etiqueta: 'Ninguna' },
           { id: 'suave', etiqueta: 'Suave' },
           { id: 'marcada', etiqueta: 'Marcada' },
+          { id: 'solida', etiqueta: 'Sólida' },
           { id: 'brillo', etiqueta: 'Brillo' },
         ]}
         alCambiar={(id) => alCambiar({ sombra: id })}
       />
       <Separador />
+      <p className="text-[11px] font-semibold text-slate-600 mb-1.5">Color de la sombra</p>
+      <SelectorColor
+        valor={estilo?.sombraColor}
+        alCambiar={(c) => alCambiar({ sombraColor: c, sombra: c && (!estilo?.sombra || estilo.sombra === 'ninguna') ? 'solida' : estilo?.sombra })}
+        coloresTema={coloresTema}
+        etiquetaQuitar="Color automático"
+      />
+    </PanelHerramienta>,
+
+    <PanelHerramienta key="efectos" id="efectos" etiqueta="Fondo" titulo="Fondo y recuadro del texto" icono={<Sparkles size={TAMANO_ICONO} />} {...comunes}>
       <p className="text-[11px] font-semibold text-slate-600 mb-1.5">Resaltado detrás del texto</p>
       <SelectorColor
         valor={estilo?.colorFondo}
@@ -278,6 +298,16 @@ function controlesTexto({
         coloresTema={coloresTema}
         etiquetaQuitar="Sin resaltado"
       />
+      <Separador />
+      <Deslizador etiqueta="Recuadro alrededor" valor={estilo?.marcoGrosor ?? 0} min={0} max={6} paso={0.5} unidad=" px" alCambiar={(v) => alCambiar({ marcoGrosor: v || undefined, marcoColor: v ? estilo?.marcoColor || coloresTema[0] : estilo?.marcoColor })} />
+      {(estilo?.marcoGrosor ?? 0) > 0 && (
+        <SelectorColor
+          valor={estilo?.marcoColor}
+          alCambiar={(c) => alCambiar(c ? { marcoColor: c } : { marcoColor: undefined, marcoGrosor: undefined })}
+          coloresTema={coloresTema}
+          etiquetaQuitar="Sin recuadro"
+        />
+      )}
     </PanelHerramienta>,
   ]
 }

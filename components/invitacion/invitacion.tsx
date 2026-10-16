@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ConfiguracionVisual, DetalleEvento, Invitado, SeccionModular, TipoSeccion } from '@/types/invitation'
 import { experienciaDe, KIT_POR_DEFECTO, visualDesdeKit } from '@/lib/estudio/kits'
 import { CATALOGO_SECCIONES } from '@/lib/modular-defaults'
@@ -28,6 +28,7 @@ import {
 import { BloqueCollage, BloqueConfirmacion, BloqueJuego, BloqueListaRegalos, BloquePlaylist, BloqueVaca } from './bloques-interactivos'
 import { ConfirmacionAsistencia, leerRespuestaGuardada, type RespuestaInvitado } from './confirmacion'
 import { AperturaInvitacion } from './apertura'
+import { useMusicaFondo } from './musica'
 
 const BLOQUES: Partial<Record<TipoSeccion, (p: PropsBloque) => React.ReactElement | null>> = {
   cabecera: BloquePortada,
@@ -91,8 +92,6 @@ export function Invitacion({
   const [confirmacionAbierta, setConfirmacionAbierta] = useState(false)
   const [respuesta, setRespuesta] = useState<RespuestaInvitado | null>(null)
   const [indiceHistoria, setIndiceHistoria] = useState(0)
-  const audio = useRef<HTMLAudioElement | null>(null)
-  const [sonando, setSonando] = useState(false)
 
   useEffect(() => {
     setAbierta(!mostrarApertura || experiencia.apertura === 'directo')
@@ -103,36 +102,12 @@ export function Invitacion({
   }, [modo, evento.id, invitado])
 
   // Música: suena después de abrir la invitación (los navegadores bloquean el audio antes de un toque)
-  const musica = visual.musicaFondo
-  useEffect(() => {
-    if (modo === 'editor' || !musica?.activa || !musica.url) return
-    const a = new Audio(musica.url)
-    a.loop = true
-    a.volume = 0.45
-    audio.current = a
-    return () => {
-      a.pause()
-      audio.current = null
-    }
-  }, [modo, musica?.activa, musica?.url])
-
+  const musica = useMusicaFondo(visual.musicaFondo, modo !== 'editor', contenida)
+  const iniciarMusica = musica.iniciar
   const alAbrir = useCallback(() => {
     setAbierta(true)
-    if (audio.current && musica?.autoReproducir !== false) {
-      audio.current.play().then(() => setSonando(true)).catch(() => {})
-    }
-  }, [musica?.autoReproducir])
-
-  const alternarMusica = () => {
-    const a = audio.current
-    if (!a) return
-    if (sonando) {
-      a.pause()
-      setSonando(false)
-    } else {
-      a.play().then(() => setSonando(true)).catch(() => {})
-    }
-  }
+    iniciarMusica()
+  }, [iniciarMusica])
 
   const interactuar = useCallback(
     async (seccionId: string, accion: string, datos: Record<string, unknown>): Promise<SeccionModular | null> => {
@@ -259,15 +234,19 @@ export function Invitacion({
           </div>
         )}
 
-        {musica?.activa && musica.url && modo !== 'editor' && abierta && (
-          <button
-            type="button"
-            onClick={alternarMusica}
-            aria-label={sonando ? 'Pausar música' : 'Reproducir música'}
-            style={{ position: contenida ? 'absolute' : 'fixed', right: 16, bottom: 16, zIndex: 60, minHeight: 44, padding: '0 14px', borderRadius: 999, border: 0, backgroundColor: 'var(--inv-tinta)', color: 'var(--inv-tarjeta)', display: 'inline-flex', alignItems: 'center', gap: 8, font: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 16px rgba(0,0,0,0.2)' }}
-          >
-            {sonando ? '❚❚' : '▶'} {musica.titulo || 'Música'}
-          </button>
+        {musica.fuente && abierta && (
+          <>
+            {musica.reproductor}
+            <button
+              type="button"
+              onClick={musica.alternar}
+              aria-label={musica.esSpotify ? (musica.spotifyVisible ? 'Ocultar reproductor' : 'Mostrar reproductor') : musica.sonando ? 'Pausar música' : 'Reproducir música'}
+              style={{ position: contenida ? 'absolute' : 'fixed', right: 16, bottom: 16, zIndex: 60, maxWidth: 'calc(100% - 32px)', minHeight: 44, padding: '0 14px', borderRadius: 999, border: 0, backgroundColor: 'var(--inv-tinta)', color: 'var(--inv-tarjeta)', display: 'inline-flex', alignItems: 'center', gap: 8, font: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 6px 16px rgba(0,0,0,0.2)' }}
+            >
+              <span aria-hidden="true">{musica.esSpotify ? '♫' : musica.sonando ? '❚❚' : '▶'}</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{visual.musicaFondo?.titulo || 'Música'}</span>
+            </button>
+          </>
         )}
 
         {mostrarApertura && !abierta && (

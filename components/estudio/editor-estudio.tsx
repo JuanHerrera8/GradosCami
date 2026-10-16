@@ -187,6 +187,11 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
       setHoja(null)
       estudio.acciones.abrirAgregar()
     },
+    estilizarTitulo: (sId) => {
+      estudio.acciones.seleccionar({ tipo: 'texto', seccionId: sId, campo: 'titulo' })
+      setHoja(null)
+      setTimeout(() => document.querySelector(`[data-texto-clave="${CSS.escape(`${sId}:titulo`)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
+    },
   }
 
   const cambiarVisual = (v: ConfiguracionVisual) => {
@@ -262,6 +267,7 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
       {pestana === 'estilo' && <PanelEstilos visual={visual} tipoEvento={evento.tipoEvento} alCambiar={cambiarVisual} />}
       {pestana === 'experiencia' && (
         <PanelExperiencia
+          evento={evento}
           visual={visual}
           alCambiar={cambiarVisual}
           alProbarApertura={() => {
@@ -442,6 +448,7 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
                           <PanelEstilos visual={visual} tipoEvento={evento.tipoEvento} alCambiar={cambiarVisual} />
                         ) : (
                           <PanelExperiencia
+                            evento={evento}
                             visual={visual}
                             alCambiar={cambiarVisual}
                             alProbarApertura={() => {
