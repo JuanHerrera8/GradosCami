@@ -52,7 +52,7 @@ function asignarRuta(objeto: Record<string, unknown>, ruta: string[], valor: unk
 }
 
 type PanelDiseno = 'estilo' | 'experiencia' | 'datos'
-type HojaMovil = 'bloques' | 'diseno' | 'datos' | 'inspector' | null
+type HojaMovil = 'bloques' | 'diseno' | 'inspector' | null
 
 export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento }) {
   const router = useRouter()
@@ -249,6 +249,14 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
     />
   )
 
+  const [pestanaMovil, setPestanaMovil] = useState<PanelDiseno>('estilo')
+
+  // En móvil abre la única hoja de diseño (Estilo · Experiencia · Datos) en la pestaña indicada
+  const abrirHojaDiseno = (pestana: PanelDiseno) => {
+    setPestanaMovil(pestana)
+    setHoja('diseno')
+  }
+
   const contenidoDiseno = (pestana: PanelDiseno) => (
     <div className="flex flex-col gap-4">
       <div role="tablist" aria-label="Diseño" className="flex p-1 rounded-xl bg-slate-100">
@@ -259,7 +267,7 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
             ['datos', 'Datos'],
           ] as [PanelDiseno, string][]
         ).map(([id, nombre]) => (
-          <button key={id} type="button" role="tab" aria-selected={pestana === id} onClick={() => (esMovil ? setHoja(id === 'datos' ? 'datos' : 'diseno') : setPanelDiseno(id))} className={`flex-1 min-h-9 rounded-lg text-[13px] cursor-pointer ${pestana === id ? 'bg-white font-bold text-slate-900 shadow-sm' : 'font-semibold text-slate-600'}`}>
+          <button key={id} type="button" role="tab" aria-selected={pestana === id} onClick={() => (esMovil ? setPestanaMovil(id) : setPanelDiseno(id))} className={`flex-1 min-h-9 rounded-lg text-[13px] cursor-pointer ${pestana === id ? 'bg-white font-bold text-slate-900 shadow-sm' : 'font-semibold text-slate-600'}`}>
             {nombre}
           </button>
         ))}
@@ -281,8 +289,6 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
       {pestana === 'datos' && <PanelDatos evento={evento} alCambiar={(c) => setEvento((prev) => ({ ...prev, ...c }))} />}
     </div>
   )
-
-  const [pestanaMovil, setPestanaMovil] = useState<PanelDiseno>('estilo')
 
   // ─────────── Lienzo (la invitación) ───────────
   const lienzo = (
@@ -387,7 +393,7 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
                       ['diseno', 'Estilo', <Palette key="i" size={21} />],
                     ] as const
                   ).map(([id, nombre, icono]) => (
-                    <button key={id} type="button" onClick={() => setHoja(id)} className="w-16 h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-600 cursor-pointer">
+                    <button key={id} type="button" onClick={() => (id === 'diseno' ? abrirHojaDiseno('estilo') : setHoja(id))} className="w-16 h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-600 cursor-pointer">
                       {icono}
                       {nombre}
                     </button>
@@ -395,7 +401,7 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
                   <button type="button" aria-label="Añadir" onClick={() => setHoja('bloques')} className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg cursor-pointer">
                     <Plus size={26} />
                   </button>
-                  <button type="button" onClick={() => setHoja('datos')} className="w-16 h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-600 cursor-pointer">
+                  <button type="button" onClick={() => abrirHojaDiseno('datos')} className="w-16 h-14 flex flex-col items-center justify-center gap-1 text-[11px] font-semibold text-slate-600 cursor-pointer">
                     <PencilLine size={21} />
                     Datos
                   </button>
@@ -422,44 +428,14 @@ export function EditorEstudio({ eventoInicial }: { eventoInicial: DetalleEvento 
                   <div className="mx-auto mt-2.5 h-1.5 w-12 shrink-0 rounded-full bg-slate-300" />
                   <div className="flex items-center justify-between px-4 pt-2">
                     <Vaul.Title className="text-[16px] font-extrabold text-slate-900">
-                      {hoja === 'bloques' ? 'Bloques' : hoja === 'inspector' ? 'Editar bloque' : hoja === 'datos' ? 'Datos del evento' : 'Diseño'}
+                      {hoja === 'bloques' ? 'Bloques' : hoja === 'inspector' ? 'Editar bloque' : pestanaMovil === 'datos' ? 'Datos del evento' : 'Diseño'}
                     </Vaul.Title>
                     <BotonCerrar alCerrar={() => setHoja(null)} />
                   </div>
                   <div className="overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
                     {hoja === 'bloques' && panelBloques}
                     {hoja === 'inspector' && inspector}
-                    {hoja === 'datos' && contenidoDiseno('datos')}
-                    {hoja === 'diseno' && (
-                      <div className="flex flex-col gap-4">
-                        <div role="tablist" aria-label="Diseño" className="flex p-1 rounded-xl bg-slate-100">
-                          {(
-                            [
-                              ['estilo', 'Estilo'],
-                              ['experiencia', 'Experiencia'],
-                            ] as [PanelDiseno, string][]
-                          ).map(([id, nombre]) => (
-                            <button key={id} type="button" role="tab" aria-selected={pestanaMovil === id} onClick={() => setPestanaMovil(id)} className={`flex-1 min-h-9 rounded-lg text-[13px] cursor-pointer ${pestanaMovil === id ? 'bg-white font-bold text-slate-900 shadow-sm' : 'font-semibold text-slate-600'}`}>
-                              {nombre}
-                            </button>
-                          ))}
-                        </div>
-                        {pestanaMovil === 'estilo' ? (
-                          <PanelEstilos visual={visual} tipoEvento={evento.tipoEvento} alCambiar={cambiarVisual} />
-                        ) : (
-                          <PanelExperiencia
-                            evento={evento}
-                            visual={visual}
-                            alCambiar={cambiarVisual}
-                            alProbarApertura={() => {
-                              setVistaInvitado(true)
-                              setClaveApertura((c) => c + 1)
-                              setHoja(null)
-                            }}
-                          />
-                        )}
-                      </div>
-                    )}
+                    {hoja === 'diseno' && contenidoDiseno(pestanaMovil)}
                   </div>
                 </Vaul.Content>
               </Vaul.Portal>
