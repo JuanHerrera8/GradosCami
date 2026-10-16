@@ -1,4 +1,5 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+import { RegistrarServiceWorker } from '@/components/registrar-sw'
 import { Roboto_Slab, Inter, Playfair_Display } from 'next/font/google'
 import './globals.css'
 
@@ -34,15 +35,24 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico',
     apple: '/apple-icon',
   },
+  appleWebApp: {
+    capable: true,
+    title: 'Tarjetón',
+    statusBarStyle: 'default',
+  },
   other: {
     'google-adsense-account': 'ca-pub-4454797114720338',
   },
 }
 
-export const viewport = {
+// maximumScale: 1 evita el zoom automático de iOS al enfocar inputs con letra < 16px
+// (iOS sigue permitiendo el pellizco para ampliar).
+export const viewport: Viewport = {
   themeColor: '#FFFFFF',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -71,6 +81,7 @@ export default function RootLayout({
       </head>
       <body className={`${robotoSlab.variable} ${inter.variable} ${playfair.variable} antialiased font-sans`}>
         {children}
+        <RegistrarServiceWorker />
       </body>
     </html>
   )

@@ -53,6 +53,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Evita que el navegador móvil agrande el texto por su cuenta */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  html,
+  body {
+    /* Un elemento más ancho que la pantalla hace que el móvil abra la página con zoom reducido */
+    overflow-x: clip;
+  }
   body {
     @apply bg-background text-foreground;
   }
