@@ -119,8 +119,25 @@ export default function PaginaAdminDashboard() {
     }
   }, [pestana, autenticado])
 
+  // Métricas globales desde el servidor (Supabase), sin filtros de fecha ni búsqueda
+  const cargarMetricas = async () => {
+    try {
+      const res = await fetch('/api/admin/eventos?limite=10000')
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data.eventos)) {
+          setMetricas(AdminStorage.calcularMetricas(data.eventos, data.totalInvitados))
+          return
+        }
+      }
+    } catch (err) {
+      console.warn('Error cargando métricas del servidor:', err)
+    }
+    cargarMetricas()
+  }
+
   const cargarDatos = () => {
-    setMetricas(AdminStorage.calcularMetricas())
+    cargarMetricas()
     setPromociones(AdminStorage.obtenerPromociones())
     setPublicaciones(AdminStorage.obtenerPublicaciones())
     AdminStorage.obtenerConfiguracionAsync().then((conf) => {
@@ -226,7 +243,7 @@ export default function PaginaAdminDashboard() {
         EventoRepositorio.eliminar(eventoAEliminar.id)
         setEventos((prev) => prev.filter((e) => e.id !== eventoAEliminar.id))
         setEventoAEliminar(null)
-        setMetricas(AdminStorage.calcularMetricas())
+        cargarMetricas()
         notificar(`Evento "${eventoAEliminar.titulo}" y todas sus invitaciones fueron eliminados permanentemente.`)
         consultarEventos()
       } else {
@@ -336,7 +353,7 @@ export default function PaginaAdminDashboard() {
     const actualizado = { ...ev, esPremium: nuevoEstado }
     EventoRepositorio.guardar(actualizado)
     setEventos((prev) => prev.map((e) => (e.id === ev.id ? actualizado : e)))
-    setMetricas(AdminStorage.calcularMetricas())
+    cargarMetricas()
     notificar(`Evento "${ev.titulo}" actualizado a ${actualizado.esPremium ? 'PREMIUM' : 'GRATUITO'}.`)
   }
 

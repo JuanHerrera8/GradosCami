@@ -23,11 +23,18 @@ export async function GET(request: NextRequest) {
   const limite = Number(searchParams.get('limite')) || 100
 
   const eventosMap = new Map<string, DetalleEvento>()
+  let totalInvitados: number | null = null
 
   // 1. Consultar base de datos central Supabase aplicando filtro por fecha a nivel SQL
   try {
     const supabase = obtenerClienteSupabase()
     if (supabase) {
+      // Conteo global de invitados para las métricas del panel
+      const { count, error: errCount } = await supabase
+        .from('invitados')
+        .select('id', { count: 'exact', head: true })
+      if (!errCount && typeof count === 'number') totalInvitados = count
+
       let query = supabase.from('eventos').select('*')
 
       if (desde && desde !== 'todos') {
@@ -82,6 +89,7 @@ export async function GET(request: NextRequest) {
     ok: true,
     eventos: eventosFinal,
     total: eventosFinal.length,
+    totalInvitados,
     desde: desde || null,
     hasta: hasta || null,
   })

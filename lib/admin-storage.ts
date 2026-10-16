@@ -186,8 +186,10 @@ export const AdminStorage = {
   },
 
   // ─── CÁLCULO DE MÉTRICAS & INGRESOS ───
-  calcularMetricas(): MetricasSistema {
-    const eventos: DetalleEvento[] = EventoRepositorio.obtenerTodos()
+  // Si se reciben los eventos del servidor (Supabase) se usan como fuente de verdad;
+  // si no, se recurre a la caché local del navegador.
+  calcularMetricas(eventosServidor?: DetalleEvento[], totalInvitadosServidor?: number | null): MetricasSistema {
+    const eventos: DetalleEvento[] = eventosServidor ?? EventoRepositorio.obtenerTodos()
     const config = this.obtenerConfiguracion()
 
     const totalEventos = eventos.length
@@ -206,9 +208,18 @@ export const AdminStorage = {
 
     // Conteo de invitados en todo el sistema
     let totalInvitados = 0
-    eventos.forEach((e) => {
-      totalInvitados += InvitadoRepositorio.obtenerPorEvento(e.id).length
-    })
+    if (typeof totalInvitadosServidor === 'number') {
+      totalInvitados = totalInvitadosServidor
+    } else {
+      eventos.forEach((e) => {
+        totalInvitados += InvitadoRepositorio.obtenerPorEvento(e.id).length
+      })
+    }
+
+    // Más recientes primero según fecha de creación
+    const eventosRecientes = [...eventos]
+      .sort((a, b) => new Date(b.creadoEn || 0).getTime() - new Date(a.creadoEn || 0).getTime())
+      .slice(0, 10)
 
     const promocionesActivas = this.obtenerPromociones().filter((p) => p.activo).length
     const publicacionesActivas = this.obtenerPublicaciones().filter((p) => p.activo).length
@@ -221,7 +232,7 @@ export const AdminStorage = {
       ingresosTotalesCOP,
       ingresosTotalesUSD,
       tasaConversion,
-      eventosRecientes: eventos.slice(-10).reverse(),
+      eventosRecientes,
       promocionesActivas,
       publicacionesActivas,
     }
